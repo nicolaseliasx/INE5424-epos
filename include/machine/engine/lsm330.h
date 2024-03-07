@@ -86,96 +86,96 @@ public:
 
     float accelerometer_x() { // in g
         // LSBX axis
-        char x_lsb[2];
+        char x_lsb;
         _i2c->put(I2C_ACC_ADDR, REG_OUT_X_L);
         Machine::delay(5);
 
-        _i2c->get(I2C_ACC_ADDR, x_lsb);               // i2c->get(I2C_ACC_ADDR, x_lsb, 2);
+        _i2c->get(I2C_ACC_ADDR, &x_lsb);
         Machine::delay(5);
 
         if(x_lsb == 0)
             return 0;
 
         // MSBX axis
-        char x_msb[2];
+        char x_msb;
         _i2c->put(I2C_ACC_ADDR, REG_OUT_X_H);
         Machine::delay(5);
 
-        _i2c->get(I2C_ACC_ADDR, x_msb);              // _i2c->get(I2C_ACC_ADDR, x_msb, 2);
+        _i2c->get(I2C_ACC_ADDR, &x_msb);
         Machine::delay(5);
 
         if(x_msb == 0)
             return 0;
 
         // Convert the two's complement value
-        int ax = ((int)x_msb[0] << 8) | (int)x_lsb[0];
+        int ax = (static_cast<int>(x_msb) << 8) | static_cast<int>(x_lsb);
         if(ax > 32767)
             ax-= 65536;
 
         // Data conversion:
         // - Acceleration range +-2g
         // - Linear acceleration sensitivity 0.061 mg/digit
-        return (float)ax * 0.000061;
+        return static_cast<float>(ax) * 0.000061;
     }
 
     float accelerometer_y() { // in g
         // LSBY axis
-        char y_lsb[2];
+        char y_lsb;
         _i2c->put(I2C_ACC_ADDR, REG_OUT_Y_L);
         Machine::delay(5);
-        _i2c->get(I2C_ACC_ADDR, y_lsb);             // _i2c->get(I2C_ACC_ADDR, y_lsb, 2);
+        _i2c->get(I2C_ACC_ADDR, &y_lsb);
         Machine::delay(5);
         if(y_lsb == 0)
             return 0;
 
         // MSBY axis
-        char y_msb[2];
+        char y_msb;
         _i2c->put(I2C_ACC_ADDR, REG_OUT_Y_H);
         Machine::delay(5);
-        _i2c->get(I2C_ACC_ADDR, y_msb);             // _i2c->get(I2C_ACC_ADDR, y_msb, 2);
+        _i2c->get(I2C_ACC_ADDR, &y_msb);
         Machine::delay(5);
         if(y_msb == 0)
             return 0;
 
         // Convert the two's complement value
-        int ay = ((int)y_msb[0] << 8) | (int)y_lsb[0];
+        int ay = (static_cast<int>(y_msb) << 8) | static_cast<int>(y_lsb);
         if(ay > 32767)
             ay -= 65536;
 
         // Data conversion:
         // - Acceleration range +-2g
         // - Linear acceleration sensitivity 0.061 mg/digit
-        return (float)ay * 0.000061;
+        return static_cast<float>(ay) * 0.000061;
     }
 
     float accelerometer_z() { // in g
         // LSBZ axis
-        char z_lsb[2];
+        char z_lsb;
         _i2c->put(I2C_ACC_ADDR, REG_OUT_Z_L);
         Machine::delay(5);
-        _i2c->get(I2C_ACC_ADDR, z_lsb);            // _i2c->get(I2C_ACC_ADDR, z_lsb, 2);
+        _i2c->get(I2C_ACC_ADDR, &z_lsb);
         Machine::delay(5);
         if(z_lsb == 0)
             return 0;
 
         // MSBZ axis
-        char z_msb[2];
+        char z_msb;
         _i2c->put(I2C_ACC_ADDR, REG_OUT_Z_H);
         Machine::delay(5);
-        _i2c->get(I2C_ACC_ADDR, z_msb);            // _i2c->get(I2C_ACC_ADDR, z_msb, 2);
+        _i2c->get(I2C_ACC_ADDR, &z_msb);
         Machine::delay(5);
         if(z_msb == 0)
             return 0;
 
         // Convert the two's complement value
-        int az = ((int)z_msb[0] << 8) | (int)z_lsb[0];
+        int az = (static_cast<int>(z_msb) << 8) | static_cast<int>(z_lsb);
         if(az > 32767)
             az -= 65536;
 
         // Data conversion:
         // - Acceleration range +-2g
         // - Linear acceleration sensitivity 0.061 mg/digit
-        return (float)az * 0.000061;
+        return static_cast<float>(az) * 0.000061;
     }
 
     void gyroscope_config() {
@@ -215,26 +215,26 @@ public:
 
     float gyroscope_x() { // in degrees per second (dps)
         // LSB X axis
-        char x_lsb[2];
+        char x_lsb;
         _i2c->put(I2C_GYRO_ADDR, REG_OUT_X_L);
         Machine::delay(5);
-        _i2c->get(I2C_GYRO_ADDR, x_lsb);
+        _i2c->get(I2C_GYRO_ADDR, &x_lsb);
         Machine::delay(5);
         if(x_lsb == 0)
             return 0;
 
         // MSB X axis
-        char x_msb[2];
+        char x_msb;
         _i2c->put(I2C_GYRO_ADDR, REG_OUT_X_H);
         Machine::delay(5);
-        _i2c->get(I2C_GYRO_ADDR, x_msb);
+        _i2c->get(I2C_GYRO_ADDR, &x_msb);
         Machine::delay(5);
         if(x_msb == 0)
             return 0;
 
         // Convert the two's complement value
-        int gx = ((int)x_msb[0] << 8) | (int)x_lsb[0];
-        if (gx > 32767)
+        int gx = (static_cast<int>(x_msb) << 8) | static_cast<int>(x_lsb);
+        if(gx > 32767)
             gx -= 65536;
 
         // Data conversion:
@@ -245,26 +245,26 @@ public:
 
     float gyroscope_y() { // in degrees per second (dps)
         // LSB Y axis
-        char y_lsb[2];
+        char y_lsb;
         _i2c->put(I2C_GYRO_ADDR, REG_OUT_Y_L);
         Machine::delay(5);
-        _i2c->get(I2C_GYRO_ADDR, y_lsb);
+        _i2c->get(I2C_GYRO_ADDR, &y_lsb);
         Machine::delay(5);
         if(y_lsb == 0)
             return 0;
 
         // MSB Y axis
-        char y_msb[2];
+        char y_msb;
         _i2c->put(I2C_GYRO_ADDR, REG_OUT_Y_H);
         Machine::delay(5);
-        _i2c->get(I2C_GYRO_ADDR, y_msb);
+        _i2c->get(I2C_GYRO_ADDR, &y_msb);
         Machine::delay(5);
         if(y_msb == 0)
             return 0;
 
         // Convert the two's complement value
-        int gy = ((int)y_msb[0] << 8) | (int)y_lsb[0];
-        if (gy > 32767)
+        int gy = (static_cast<int>(y_msb) << 8) | static_cast<int>(y_lsb);
+        if(gy > 32767)
             gy -= 65536;
 
         // Data conversion:
@@ -275,26 +275,26 @@ public:
 
     float gyroscope_z() { // in degrees per second (dps)
         // LSB Z axis
-        char z_lsb[2];
+        char z_lsb;
         _i2c->put(I2C_GYRO_ADDR, REG_OUT_Z_L);
         Machine::delay(5);
-        _i2c->get(I2C_GYRO_ADDR, z_lsb);
+        _i2c->get(I2C_GYRO_ADDR, &z_lsb);
         Machine::delay(5);
         if(z_lsb == 0)
             return 0;
 
         // MSB Z axis
-        char z_msb[2];
+        char z_msb;
         _i2c->put(I2C_GYRO_ADDR, REG_OUT_Z_H);
         Machine::delay(5);
-        _i2c->get(I2C_GYRO_ADDR, z_msb);
+        _i2c->get(I2C_GYRO_ADDR, &z_msb);
         Machine::delay(5);
         if(z_msb == 0)
             return 0;
 
         // Convert the two's complement value
-        int gz = ((int)z_msb[0] << 8) | (int)z_lsb[0];
-        if (gz > 32767)
+        int gz = (static_cast<int>(z_msb) << 8) | static_cast<int>(z_lsb);
+        if(gz > 32767)
             gz -= 65536;
 
         // Data conversion:

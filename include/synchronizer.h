@@ -16,8 +16,8 @@ protected:
 
     // Atomic operations
     bool tsl(volatile bool & lock) { return CPU::tsl(lock); }
-    int finc(volatile int & number) { return CPU::finc(number); }
-    int fdec(volatile int & number) { return CPU::fdec(number); }
+    long finc(volatile long & number) { return CPU::finc(number); }
+    long fdec(volatile long & number) { return CPU::fdec(number); }
 
     // Thread operations
     void begin_atomic() { Thread::lock(); }
@@ -46,14 +46,14 @@ private:
 class Semaphore: protected Synchronizer_Common
 {
 public:
-    Semaphore(int v = 1);
+    Semaphore(long v = 1);
     ~Semaphore();
 
     void p();
     void v();
 
 private:
-    volatile int _value;
+    volatile long _value;
 };
 
 

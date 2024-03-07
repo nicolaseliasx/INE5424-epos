@@ -7,19 +7,20 @@
 
 __BEGIN_SYS
 
-// Methods
-
-Condition::Condition() {
+Condition::Condition()
+{
     db<Synchronizer>(TRC) << "Condition() => " << this << endl;
 }
 
 
-Condition::~Condition() {
+Condition::~Condition()
+{
     db<Synchronizer>(TRC) << "~Condition(this=" << this << ")" << endl;
 }
 
 
-void Condition::wait() {
+void Condition::wait()
+{
     db<Synchronizer>(TRC) << "Condition::wait(this=" << this << ")" << endl;
 
     begin_atomic();
@@ -27,7 +28,8 @@ void Condition::wait() {
 }
 
 
-void Condition::signal() {
+void Condition::signal()
+{
     db<Synchronizer>(TRC) << "Condition::signal(this=" << this << ")" << endl;
 
     begin_atomic();
@@ -35,7 +37,8 @@ void Condition::signal() {
 }
 
 
-void Condition::broadcast() {
+void Condition::broadcast()
+{
     db<Synchronizer>(TRC) << "Condition::broadcast(this=" << this << ")" << endl;
 
     begin_atomic();

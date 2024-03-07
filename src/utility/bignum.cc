@@ -4,7 +4,6 @@
 
 __BEGIN_UTIL
 
-// Class attributes
 template<>
 const Bignum<16>::_Word Bignum<16>::_mod = {{ 0xff, 0xff, 0xff, 0xff,
                                               0xff, 0xff, 0xff, 0xff,

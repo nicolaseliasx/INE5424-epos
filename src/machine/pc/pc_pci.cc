@@ -4,7 +4,6 @@
 
 __BEGIN_SYS
 
-// Class attributes
 PCI::Phy_Addr PCI::_phy_io_mem;
 PCI::Reg32 PCI::_base_address[Region::N] = {
     BASE_ADDRESS_0, BASE_ADDRESS_1,
@@ -12,7 +11,7 @@ PCI::Reg32 PCI::_base_address[Region::N] = {
     BASE_ADDRESS_4, BASE_ADDRESS_5
 };
 
-// Methods
+
 void PCI::header(const PCI::Locator & l, PCI::Header * h)
 {
     h->vendor_id = cfg16(l.bus, l.dev_fn, VENDOR_ID);

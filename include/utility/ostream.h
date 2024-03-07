@@ -28,10 +28,13 @@ public:
     OStream(): _base(10), _error(false) {}
 
     OStream & operator<<(const Begl & begl) {
+        _error = false;
+        _print_preamble();
         return *this;
     }
 
     OStream & operator<<(const Endl & endl) {
+        _print_trailler(_error);
         print("\n");
         _base = 10;
         return *this;
@@ -81,32 +84,38 @@ public:
         return operator<<(static_cast<int>(s));
     }
     OStream & operator<<(long l) {
-        return operator<<(static_cast<int>(l));
-    }
-
-    OStream & operator<<(unsigned int u) {
         char buf[64];
-        buf[utoa(u, buf)] = '\0';
-        print(buf);
-        return *this;
-    }
-    OStream & operator<<(unsigned short s) {
-        return operator<<(static_cast<unsigned int>(s));
-    }
-    OStream & operator<<(unsigned long l) {
-        return operator<<(static_cast<unsigned int>(l));
-    }
-
-    OStream & operator<<(long long int u) {
-        char buf[64];
-        buf[llitoa(u, buf)] = '\0';
+        buf[ltoa(l, buf)] = '\0';
         print(buf);
         return *this;
     }
 
-    OStream & operator<<(unsigned long long int u) {
+    OStream & operator<<(unsigned int ui) {
         char buf[64];
-        buf[llutoa(u, buf)] = '\0';
+        buf[utoa(ui, buf)] = '\0';
+        print(buf);
+        return *this;
+    }
+    OStream & operator<<(unsigned short us) {
+        return operator<<(static_cast<unsigned int>(us));
+    }
+    OStream & operator<<(unsigned long ul) {
+        char buf[64];
+        buf[ultoa(ul, buf)] = '\0';
+        print(buf);
+        return *this;
+    }
+
+    OStream & operator<<(long long ll) {
+        char buf[64];
+        buf[lltoa(ll, buf)] = '\0';
+        print(buf);
+        return *this;
+    }
+
+    OStream & operator<<(unsigned long long ull) {
+        char buf[64];
+        buf[ulltoa(ull, buf)] = '\0';
         print(buf);
         return *this;
     }
@@ -128,7 +137,7 @@ public:
             (*this) << "0.0000";
             return *this;
         }
-        if (f < 0) {
+        if(f < 0) {
             (*this) << "-";
             f *= -1;
         }
@@ -149,12 +158,14 @@ private:
 
     int itoa(int v, char * s);
     int utoa(unsigned int v, char * s, unsigned int i = 0);
-    int llitoa(long long int v, char * s);
-    int llutoa(unsigned long long int v, char * s, unsigned int i = 0);
+    int ltoa(long v, char * s);
+    int ultoa(unsigned long v, char * s, unsigned int i = 0);
+    int lltoa(long long v, char * s);
+    int ulltoa(unsigned long long v, char * s, unsigned int i = 0);
     int ptoa(const void * p, char * s);
 
 private:
-    int _base;
+    unsigned int _base;
     volatile bool _error;
 
     static const char _digits[];
@@ -168,9 +179,5 @@ constexpr OStream::Oct oct;
 constexpr OStream::Bin bin;
 
 __END_UTIL
-
-__BEGIN_SYS
-extern OStream kout, kerr;
-__END_SYS
 
 #endif

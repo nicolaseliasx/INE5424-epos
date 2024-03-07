@@ -41,6 +41,14 @@ extern "C"
 inline void * operator new(size_t s, void * a) { return a; }
 inline void * operator new[](size_t s, void * a) { return a; }
 
+void * operator new(size_t, const EPOS::System_Allocator &);
+void * operator new[](size_t, const EPOS::System_Allocator &);
+
+void * operator new(size_t, const EPOS::Scratchpad_Allocator &);
+void * operator new[](size_t, const EPOS::Scratchpad_Allocator &);
+
+void * operator new(size_t, const EPOS::Color &);
+void * operator new[](size_t, const EPOS::Color &);
 
 // Utilities
 __BEGIN_UTIL
@@ -54,11 +62,24 @@ template<> class Padding<64> { long long int _padding; } __attribute__((packed))
 typedef unsigned char Percent;
 typedef unsigned char UUID[8];
 
-class Dummy {};
+template <typename ... Tn> struct Dummy {
+    Dummy(Tn ... an){}
+    friend OStream & operator<<(OStream & os, const Dummy & d) { return os; };
+};
 
-__END_UTIL
+typedef char  Int8;
+typedef short Int16;
+typedef IF<Traits<CPU>::WORD_SIZE == 32, long /* IPL32 */, int /* LP64 */>::Result Int32;
+typedef IF<Traits<CPU>::WORD_SIZE == 32, long long /* IPL32 */, long /* LP64 */>::Result Int64;
+typedef SWITCH<Traits<CPU>::WORD_SIZE, CASE<16, Int16, CASE<32, Int32, CASE<64, Int64>>>>::Result Int;
+typedef float Float32;
+typedef double Float64;
 
-__BEGIN_SYS
+typedef unsigned char  UInt8;
+typedef unsigned short UInt16;
+typedef IF<Traits<CPU>::WORD_SIZE == 32, unsigned long /* IPL32 */, unsigned int /* LP64 */>::Result UInt32;
+typedef IF<Traits<CPU>::WORD_SIZE == 32, unsigned long long /* IPL32 */, unsigned long /* LP64 */>::Result UInt64;
+typedef SWITCH<Traits<CPU>::WORD_SIZE, CASE<16, UInt16, CASE<32, UInt32, CASE<64, UInt64>>>>::Result UInt;
 
 static const int MAX_INT = -1U/2;
 static const long int MAX_LONG_INT = -1UL/2;
@@ -85,7 +106,7 @@ enum Infinity : Time_Base { INFINITE = -1U };
 class Second
 {
 public:
-	typedef Time_Base Type;
+    typedef Time_Base Type;
 
 public:
     Second() {};
@@ -103,7 +124,7 @@ private:
 class Milisecond
 {
 public:
-	typedef Time_Base Type;
+    typedef Time_Base Type;
 
 public:
     Milisecond() {};
@@ -122,7 +143,7 @@ private:
 class Microsecond
 {
 public:
-	typedef Time_Base Type;
+    typedef Time_Base Type;
 
 public:
     Microsecond() {};
@@ -139,9 +160,9 @@ private:
     Time_Base _time;
 };
 
-typedef unsigned long Hertz;
-typedef unsigned long PPM; // parts per million
-typedef unsigned long long PPB; // parts per billion
+__END_UTIL
+
+__BEGIN_SYS
 
 // System Components IDs
 // The order in this enumeration defines many things in the system (e.g. init)
@@ -160,7 +181,6 @@ enum
     CLOCK_ID,
     ALARM_ID,
     CHRONOMETER_ID,
-    IPC_COMMUNICATOR_ID,
     UTILITY_ID,
     LAST_COMPONENT_ID,
 

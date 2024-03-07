@@ -4,6 +4,13 @@
 
 __BEGIN_SYS
 
+void Machine::pre_init(System_Info * si)
+{
+    Display::init();
+
+    db<Init, Machine>(TRC) << "Machine::pre_init()" << endl;
+}
+
 void Machine::init()
 {
     db<Init, Machine>(TRC) << "Machine::init()" << endl;
@@ -16,11 +23,6 @@ void Machine::init()
 
     if(Traits<PCI>::enabled)
         PCI::init();
-
-#ifdef __SCRATCHPAD_H
-    if(Traits<Scratchpad>::enabled)
-        Scratchpad::init();
-#endif
 
 #ifdef __KEYBOARD_H
     if(Traits<Keyboard>::enabled)

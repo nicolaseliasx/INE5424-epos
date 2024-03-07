@@ -8,7 +8,6 @@
 
 __BEGIN_SYS
 
-// Class attributes
 unsigned int PS2_Keyboard::_status;
 
 PS2_Keyboard::Scancode PS2_Keyboard::_scancodes[]= {{   0,    0,   0,   0}, // 00

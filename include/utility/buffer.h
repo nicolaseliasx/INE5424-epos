@@ -8,7 +8,7 @@
 __BEGIN_UTIL
 
 // This Buffer was designed to move data across a zero-copy communication stack, but can be used for several other purposes
-template<typename Owner, typename Data, typename Shadow = void, typename _Metadata = Dummy>
+template<typename Owner, typename Data, typename Shadow = void, typename _Metadata = Dummy<>>
 class Buffer: private Data, public _Metadata
 {
 public:
@@ -54,9 +54,9 @@ public:
     Element * link2() { return &_link2; }
     Element * lext() { return link2(); }
 
-    friend Debug & operator<<(Debug & db, const Buffer & b) {
-        db << "{md=" << b._owner << ",lk=" << b._lock << ",sz=" << b._size << ",sd=" << b._shadow << "}";
-        return db;
+    friend OStream & operator<<(OStream & os, const Buffer & b) {
+        os << "{md=" << b._owner << ",lk=" << b._lock << ",sz=" << b._size << ",sd=" << b._shadow << "}";
+        return os;
     }
 
 private:

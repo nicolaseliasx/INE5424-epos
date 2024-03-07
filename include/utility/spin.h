@@ -5,18 +5,9 @@
 
 #include <architecture.h>
 
+extern "C" { volatile unsigned long _running(); }
+
 __BEGIN_UTIL
-
-// Forwarder to the running thread id
-class This_Thread
-{
-public:
-    static volatile CPU::Reg id();
-    static void not_booting() { _not_booting = true; }
-
-private:
-    static bool _not_booting;
-};
 
 // Recursive Spin Lock
 class Spin
@@ -25,9 +16,9 @@ public:
     Spin(): _level(0), _owner(0) {}
 
     void acquire() {
-        unsigned int me = This_Thread::id();
+        unsigned long me = _running();
 
-        while(CPU::cas(_owner, 0U, me) != me);
+        while(CPU::cas(_owner, 0UL, me) != me);
         _level++;
 
         db<Spin>(TRC) << "Spin::acquire[this=" << this << ",id=" << hex << me << "]() => {owner=" << _owner << dec << ",level=" << _level << "}" << endl;
@@ -45,8 +36,8 @@ public:
     volatile bool taken() const { return (_owner != 0); }
 
 private:
-    volatile int _level;
-    volatile unsigned int _owner;
+    volatile long _level;
+    volatile unsigned long _owner;
 };
 
 // Flat Spin Lock

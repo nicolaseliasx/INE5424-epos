@@ -5,8 +5,6 @@
 
 __BEGIN_SYS
 
-volatile unsigned int Zynq::_cores;
-
 void Zynq::reboot()
 {
     db<Machine>(WRN) << "Machine::reboot()" << endl;

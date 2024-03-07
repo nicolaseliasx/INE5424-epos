@@ -4,13 +4,9 @@
 #include <system.h>
 #include <process.h>
 
-// This_Thread class attributes
-__BEGIN_UTIL
-bool This_Thread::_not_booting;
-__END_UTIL
-
 __BEGIN_SYS
 
+bool Thread::_not_booting;
 Scheduler_Timer * Thread::_timer;
 
 Thread* volatile Thread::_running;
@@ -25,7 +21,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
 }
 
 
-void Thread::constructor_epilogue(const Log_Addr & entry, unsigned int stack_size)
+void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
 {
     db<Thread>(TRC) << "Thread(entry=" << entry
                     << ",state=" << _state
@@ -182,7 +178,7 @@ void Thread::exit(int status)
 
         dispatch(prev, _running);
     } else {
-        db<Thread>(WRN) << "The last thread in the system has exited!" << endl;
+        db<Thread>(WRN) << "The last thread has exited!" << endl;
         if(reboot) {
             db<Thread>(WRN) << "Rebooting the machine ..." << endl;
             Machine::reboot();
@@ -242,13 +238,3 @@ int Thread::idle()
 }
 
 __END_SYS
-
-// Id forwarder to the spin lock
-__BEGIN_UTIL
-
-volatile CPU::Reg This_Thread::id()
-{
-    return _not_booting ? CPU::Reg(Thread::self()) : CPU::Reg(CPU::id() + 1);
-}
-
-__END_UTIL

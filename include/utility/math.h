@@ -104,19 +104,19 @@ inline float fast_log(float val)
 }
 
 template <typename T>
-const T & min(const T & x, const T & y)
+constexpr T min(T x, T y)
 {
     return (x <= y) ? x : y;
 }
 
 template <typename T>
-const T & max(const T & x, const T & y)
+constexpr T max(T x, T y)
 {
     return (x > y) ? x : y;
 }
 
 template <typename T>
-T abs(const T & x)
+constexpr T abs(T x)
 {
     return (x > 0) ? x : -x;
 }
@@ -127,7 +127,7 @@ T sin(T x) {
     float acc = 1;
     T fact= 1;
     T pow = x;
-    for (int i = 1; abs<T>(acc) > .000001 && i < 100; i++){
+    for(int i = 1; abs<T>(acc) > .000001 && i < 100; i++) {
         fact *= ((2 * i) * (2 * i + 1));
         pow *= -1 * x * x;
         acc = pow / fact;
