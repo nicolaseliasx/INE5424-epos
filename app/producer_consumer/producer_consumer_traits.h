@@ -99,6 +99,7 @@ template<> struct Traits<Application>: public Traits<Build>
 template<> struct Traits<System>: public Traits<Build>
 {
     static const bool multithread = (Traits<Application>::MAX_THREADS > 1);
+    static const bool multiheap = Traits<Scratchpad>::enabled;
 
     static const unsigned long LIFE_SPAN = 1 * YEAR; // s
     static const unsigned int DUTY_CYCLE = 1000000; // ppm
@@ -131,6 +132,10 @@ template<> struct Traits<Alarm>: public Traits<Build>
 {
     static const bool visible = hysterically_debugged;
 };
+
+template<> struct Traits<Address_Space>: public Traits<Build> {};
+
+template<> struct Traits<Segment>: public Traits<Build> {};
 
 __END_SYS
 

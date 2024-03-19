@@ -81,7 +81,7 @@ public:
     void suspend() { suspend(false); }
     void resume() { resume(false); }
 
-    static Thread * volatile self() { return running(); }
+    static Thread * volatile self() { return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1); }
     static void yield();
     static void exit(int status = 0);
 
