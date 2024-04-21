@@ -117,29 +117,29 @@ void Thread::priority_all()
 
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
-    // TODO: Preciso de uma estrutura auxiliar de qualquer forma, pois reinserir muda a ordem
-    // TODO: VAI TOMA NO CU QUE NAO CONSIGO USAR ESSA LISTA CARA, ERA PRA SER FACIL PARECE QUE COMPLICA TUDO
-    List<Thread> temporary_list;
-    Thread* aux;
+    // // TODO: Preciso de uma estrutura auxiliar de qualquer forma, pois reinserir muda a ordem
+    // // TODO: VAI TOMA NO CU QUE NAO CONSIGO USAR ESSA LISTA CARA, ERA PRA SER FACIL PARECE QUE COMPLICA TUDO
+    // List<Thread> temporary_list;
+    // Thread* aux;
 
-    while (!_scheduler.empty()) {
-        aux = _scheduler.remove_head();
-        // TODO: LINK EH A PARADA QUE A APONTA PRA QUEUE ELEMENT
-        temporary_list.insert_tail(aux); // Usa o link fornecido por cada Thread
-    }
+    // while (!_scheduler.empty()) {
+    //     aux = _scheduler.remove_head();
+    //     // TODO: LINK EH A PARADA QUE A APONTA PRA QUEUE ELEMENT
+    //     temporary_list.insert_tail(aux); // Usa o link fornecido por cada Thread
+    // }
 
 
-    while (!temporary_list.empty()) {
-        aux = temporary_list.remove_head()->object();
-        if (aux->state() != RUNNING) {
-            aux->criterion().update();
-        }
-        _scheduler.insert(aux->link());
-    }
+    // while (!temporary_list.empty()) {
+    //     aux = temporary_list.remove_head()->object();
+    //     if (aux->state() != RUNNING) {
+    //         aux->criterion().update();
+    //     }
+    //     _scheduler.insert(aux->link());
+    // }
 
-    // TODO: Precisa de reschedule? ACHO QUE NAO
-    // if(preemptive)
-    //     reschedule();
+    // // TODO: Precisa de reschedule? ACHO QUE NAO
+    // // if(preemptive)
+    // //     reschedule();
 
     unlock();
 }
@@ -279,7 +279,8 @@ void Thread::sleep(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-    priority_all();
+    if(Criterion::dynamic)
+        priority_all();
 
     Thread * prev = running();
     _scheduler.suspend(prev);
@@ -299,7 +300,8 @@ void Thread::wakeup(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-    priority_all();
+    if(Criterion::dynamic)
+        priority_all();
 
     if(!q->empty()) {
         Thread * t = q->remove()->object();
@@ -339,8 +341,8 @@ void Thread::reschedule()
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
-
-    priority_all();
+    if(Criterion::dynamic)
+        priority_all();
 
     Thread * prev = running();
     Thread * next = _scheduler.choose();
@@ -362,7 +364,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
 
     if(charge) {
-        prev->criterion().set_finished_execution();
+        if(Criterion::dynamic) {
+            prev->criterion()._finished_execution = true;
+        }
         if(Criterion::timed)
             _timer->restart();
     }

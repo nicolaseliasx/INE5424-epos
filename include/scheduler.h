@@ -116,6 +116,9 @@ public:
 
     operator const volatile int() const volatile { return _priority; }
 
+    // TODO: Avaliar se deve ficar aqui mesmo AAAAAAAA AONDE ISSO DEVE FICAR ISSO SO FUNCIONA SE FICAR AQUI
+    // TODO: DEVEMOS VERIFICAR SE REALMENTE DEVE FICAR AQUI
+    bool _finished_execution = false;
 protected:
     volatile int _priority;
 };
@@ -213,7 +216,7 @@ class LLF: public Real_Time_Scheduler_Common
 {
 public:
     static const bool timed = true;
-    // TODO: Posso usar esse flag aqui para flagear dynamic schedulers??
+    // TODO: Posso usar esse flag aqui para flagear dynamic schedulers?? ESTOU USANDO
     static const bool dynamic = true;
     static const bool preemptive = true;
 
@@ -222,13 +225,8 @@ public:
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
-    // TODO: Como posso ter um metodo que seta esse valor pra mim setar sempre que tem uma troca de contexto
-    void set_finished_execution() {
-        _finished_execution = true;
-    }
 private:
     Microsecond _start;
-    bool _finished_execution = false;
 };
 
 __END_SYS
