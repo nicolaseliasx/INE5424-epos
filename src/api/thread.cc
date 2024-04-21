@@ -110,6 +110,39 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
+void Thread::priority_all(const Criterion & c)
+{
+    // TODO: Decidir com o arthur onde devemos chamar update all priority
+    lock();
+
+    db<Thread>(TRC) << "Thread::priority_all(this=" << this << ",prio=" << c << ")" << endl;
+
+    // TODO: Dar um jeito de percorrer a lista de threads e alterar a prioridade de todas
+    // TODO: Preciso de uma estrutura auxiliar de qualquer forma, pois reinserir muda a ordem
+
+    List<Thread*> temporary_list;
+    Thread * aux;
+    while(!_scheduler.empty()) {
+        aux = _scheduler.remove_head();
+        temporary_list.insert_tail(aux);
+    }
+
+    // Atualizar a prioridade de cada thread e reinsira na fila principal
+    while (!temporary_list.empty()) {
+        aux = temporary_list.remove_head();
+        if (aux->state() != RUNNING) {
+            aux->criterion().update();
+        }
+        _scheduler.insert(aux);
+    }
+
+    // TODO: Precisa de reschedule?
+    // if(preemptive)
+    //     reschedule();
+
+    unlock();
+}
+
 
 int Thread::join()
 {

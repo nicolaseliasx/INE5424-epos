@@ -1134,6 +1134,16 @@ public:
         return _chosen;
     }
 
+    Element * remove_head() {
+        db<Lists>(TRC) << "Scheduling_List::remove_head()" << endl;
+
+        if(!empty()) {
+            _chosen = Base::remove_head();
+        }
+
+        return _chosen;
+    }
+
 private:
     using Base::remove;
     void chosen(Element * e) { _chosen = e; }

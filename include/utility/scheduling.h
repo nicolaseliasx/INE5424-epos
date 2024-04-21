@@ -103,6 +103,22 @@ public:
 
         return obj;
     }
+
+    T * remove_head() {
+        db<Scheduler>(TRC) << "Scheduler[remove_head=" << remove_head() << "]::remove_head() => ";
+        // TODO: Acho que a Base atual não tem o remove_head implementado, preciso implementar uma forma de desempilhar a cabeca
+        return Base::remove_head()->object();
+    }
+    // TODO: Não precisa de um peek_head?
+    // T * peek_head() {
+    //     db<Scheduler>(TRC) << "Scheduler[peek_head=" << peek_head() << "]::peek_head() => ";
+
+    //     if (Base::head()->object() != nullptr) {
+    //         return Base::head()->object();
+    //     } else {
+    //         return nullptr;
+    //     }
+    // }
 };
 
 __END_UTIL
