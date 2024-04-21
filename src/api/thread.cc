@@ -117,29 +117,26 @@ void Thread::priority_all()
 
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
-    // // TODO: Preciso de uma estrutura auxiliar de qualquer forma, pois reinserir muda a ordem
-    // // TODO: VAI TOMA NO CU QUE NAO CONSIGO USAR ESSA LISTA CARA, ERA PRA SER FACIL PARECE QUE COMPLICA TUDO
-    // List<Thread> temporary_list;
-    // Thread* aux;
+    List<Thread> temporary_list;
+    Thread* aux;
 
-    // while (!_scheduler.empty()) {
-    //     aux = _scheduler.remove_head();
-    //     // TODO: LINK EH A PARADA QUE A APONTA PRA QUEUE ELEMENT
-    //     temporary_list.insert_tail(aux); // Usa o link fornecido por cada Thread
-    // }
+    while (!_scheduler.empty()) {
+        aux = _scheduler.remove_head();
+        temporary_list.insert_tail(aux->link_element());
+    }
 
+    while (!temporary_list.empty()) {
+        aux = temporary_list.remove_head()->object();
+        // TODO: Tratar IDLE E MAIN? PRECISA?
+        if (aux->state() != RUNNING) {
+            aux->criterion().update();
+        }
+        _scheduler.insert(aux);
+    }
 
-    // while (!temporary_list.empty()) {
-    //     aux = temporary_list.remove_head()->object();
-    //     if (aux->state() != RUNNING) {
-    //         aux->criterion().update();
-    //     }
-    //     _scheduler.insert(aux->link());
-    // }
-
-    // // TODO: Precisa de reschedule? ACHO QUE NAO
-    // // if(preemptive)
-    // //     reschedule();
+    // TODO: Precisa de reschedule? ACHO QUE NAO
+    // if(preemptive)
+    //     reschedule();
 
     unlock();
 }
