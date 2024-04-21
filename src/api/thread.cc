@@ -112,11 +112,11 @@ void Thread::priority(const Criterion & c)
 
 void Thread::priority_all()
 {
-    // TODO: Decidir com o arthur onde devemos chamar update all priority
-    lock();
-
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
+    assert(locked()); // locking handled by caller
+
+    // TODO: Problema de acesso indevido nessa logica aqui precisa debuggar mais
     List<Thread> temporary_list;
     Thread* aux;
 
@@ -133,12 +133,6 @@ void Thread::priority_all()
         }
         _scheduler.insert(aux);
     }
-
-    // TODO: Precisa de reschedule? ACHO QUE NAO
-    // if(preemptive)
-    //     reschedule();
-
-    unlock();
 }
 
 
