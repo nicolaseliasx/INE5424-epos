@@ -80,6 +80,7 @@ public:
 
     const volatile Criterion & priority() const { return _link.rank(); }
     void priority(const Criterion & p);
+    static void priority_all();
 
     int join();
     void pass();

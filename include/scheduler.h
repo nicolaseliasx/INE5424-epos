@@ -217,11 +217,14 @@ public:
     static const bool dynamic = true;
     static const bool preemptive = true;
 
+    bool _end_execution;
 public:
     LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
+private:
+    Microsecond _start;
 };
 
 __END_SYS

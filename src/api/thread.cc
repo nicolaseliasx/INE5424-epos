@@ -110,33 +110,34 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
-void Thread::priority_all(const Criterion & c)
+void Thread::priority_all()
 {
     // TODO: Decidir com o arthur onde devemos chamar update all priority
     lock();
 
-    db<Thread>(TRC) << "Thread::priority_all(this=" << this << ",prio=" << c << ")" << endl;
+    db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
-    // TODO: Dar um jeito de percorrer a lista de threads e alterar a prioridade de todas
     // TODO: Preciso de uma estrutura auxiliar de qualquer forma, pois reinserir muda a ordem
+    // TODO: VAI TOMA NO CU QUE NAO CONSIGO USAR ESSA LISTA CARA, ERA PRA SER FACIL PARECE QUE COMPLICA TUDO
+    List<Thread> temporary_list;
+    Thread* aux;
 
-    List<Thread*> temporary_list;
-    Thread * aux;
-    while(!_scheduler.empty()) {
+    while (!_scheduler.empty()) {
         aux = _scheduler.remove_head();
-        temporary_list.insert_tail(aux);
+        // TODO: LINK EH A PARADA QUE A APONTA PRA QUEUE ELEMENT
+        temporary_list.insert_tail(aux); // Usa o link fornecido por cada Thread
     }
 
-    // Atualizar a prioridade de cada thread e reinsira na fila principal
+
     while (!temporary_list.empty()) {
-        aux = temporary_list.remove_head();
+        aux = temporary_list.remove_head()->object();
         if (aux->state() != RUNNING) {
             aux->criterion().update();
         }
-        _scheduler.insert(aux);
+        _scheduler.insert(aux->link());
     }
 
-    // TODO: Precisa de reschedule?
+    // TODO: Precisa de reschedule? ACHO QUE NAO
     // if(preemptive)
     //     reschedule();
 
@@ -278,6 +279,8 @@ void Thread::sleep(Queue * q)
 
     assert(locked()); // locking handled by caller
 
+    priority_all();
+
     Thread * prev = running();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
@@ -295,6 +298,8 @@ void Thread::wakeup(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
+
+    priority_all();
 
     if(!q->empty()) {
         Thread * t = q->remove()->object();
@@ -334,6 +339,8 @@ void Thread::reschedule()
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
+    
+    priority_all();
 
     Thread * prev = running();
     Thread * next = _scheduler.choose();
@@ -355,6 +362,10 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
 
     if(charge) {
+        // Algo assim atualizaria
+        if(Criterion::LLF) {
+            prev->criterion()._end_execution = true;
+        }
         if(Criterion::timed)
             _timer->restart();
     }

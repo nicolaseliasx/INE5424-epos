@@ -18,9 +18,20 @@ void EDF::update() {
 
 LLF::LLF(const Microsecond & deadline, const Microsecond & period, const Microsecond & capacity, unsigned int): 
     // TODO: Todos os parametros são convertidos para ticks ????
-    Real_Time_Scheduler_Common((deadline - capacity), Alarm::ticks(deadline), Alarm::ticks(period), Alarm::ticks(capacity)) {}
+    Real_Time_Scheduler_Common((deadline - capacity), Alarm::ticks(deadline), Alarm::ticks(period), Alarm::ticks(capacity)) {
+        // TODO: Preciso de alguma forma salvar tempo de inicio para atualizar capacity depois
+        _start = Alarm::elapsed();
+    }
 
 void LLF::update() {
+    // TODO: A DIF ENTRE O TEMPO _start - Alarm::elapsed() CASO NÃO SEJA MAIOR QUE _capacity DEVE SER ATUALIZADO
+    // TODO: Segundo tulio perca de deadline nao deve ser levada em conta pq teoricamente um llf nunca perde deadline
+    // TODO: SO DEVO ENTRAR AQUI CASO A THREAD EM QUESTAO ACONTECEU UMA TROCA DE CONTEXTO E ELA PAROU DE EXECUTAR
+    if (_end_execution) {
+        _capacity = _start - Alarm::elapsed();
+        // TODO: ONDE DEVO ATUALIZAR ISSO CORRETAMENTE
+        _end_execution = false;
+    }
     // TODO: Criar verificacao se acabou a execucao de seu deadline e atualizar a capacity caso não tenha acabado
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
         _priority = _deadline - (Alarm::elapsed() + _capacity);
