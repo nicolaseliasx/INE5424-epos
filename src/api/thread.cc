@@ -339,7 +339,7 @@ void Thread::reschedule()
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
-    
+
     priority_all();
 
     Thread * prev = running();
@@ -362,10 +362,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
 
     if(charge) {
-        // Algo assim atualizaria
-        if(Criterion::LLF) {
-            prev->criterion()._end_execution = true;
-        }
+        prev->criterion().set_finished_execution();
         if(Criterion::timed)
             _timer->restart();
     }

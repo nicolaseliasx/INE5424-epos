@@ -217,14 +217,18 @@ public:
     static const bool dynamic = true;
     static const bool preemptive = true;
 
-    bool _end_execution;
 public:
     LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
+    // TODO: Como posso ter um metodo que seta esse valor pra mim setar sempre que tem uma troca de contexto
+    void set_finished_execution() {
+        _finished_execution = true;
+    }
 private:
     Microsecond _start;
+    bool _finished_execution = false;
 };
 
 __END_SYS
