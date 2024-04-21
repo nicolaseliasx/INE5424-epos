@@ -110,39 +110,36 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
-void Thread::priority_all()
-{
+void Thread::priority_all() {
     lock();
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
+    cout << "ELE TA AQUI priority_all()"<< endl;
 
-    // TODO: Problema de acesso indevido nessa logica aqui precisa debuggar mais
-    List<Thread> temporary_list;
     Thread* aux;
-
-    cout << "_scheduler.size(): " << _scheduler.size() << endl;
-    while (!_scheduler.empty()) {
-        cout << "LOOP DE REMOVER" << endl;
-        cout << "LOOP DE REMOVER - !_scheduler.empty(): " << !_scheduler.empty() << endl;
-        aux = _scheduler.remove_head();
-        cout << "LOOP DE REMOVER - aux: " << aux << endl;
-        temporary_list.insert_tail(aux->link_element());
-        cout << "LOOP DE REMOVER - temporary_list.size(): " << temporary_list.size() << endl;
+    List<Thread> temporary_list;
+    _scheduler.reset_iterator();
+    while ((aux = _scheduler.next()) != nullptr) {
+        cout << "priority_all() AUX =" << aux << endl;
+        if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
+            aux->criterion().update();
+            aux->_link.rank(Criterion(aux->criterion()._priority));
+            temporary_list.insert_tail(aux->link_element());
+        }
     }
+
+    cout << "SAIU DO LOOP 1" << endl;
 
     while (!temporary_list.empty()) {
-        cout << "LOOP DE ATT" << endl;
         aux = temporary_list.remove_head()->object();
-        cout << "LOOP DE ATT - aux: " << aux << endl;
-        if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
-            cout << "LOOP DE ATT - DENTRO DO IF DE ATUALIZAR: " << aux << endl;
-            aux->criterion().update();
-        }
+        _scheduler.remove(aux);
         _scheduler.insert(aux);
-        cout << "_scheduler.size(): " << _scheduler.size() << endl;
     }
+    
+    cout << "SAIU DO LOOP 2" << endl;
     
     unlock();
 }
+
 
 int Thread::join()
 {
@@ -278,8 +275,8 @@ void Thread::sleep(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-    if(Criterion::dynamic)
-        priority_all();
+    // if(Criterion::dynamic)
+    //     priority_all();
 
     Thread * prev = running();
     _scheduler.suspend(prev);
@@ -340,10 +337,12 @@ void Thread::reschedule()
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
+    // TODO: alterar isso pra dynamic
+    
     assert(locked()); // locking handled by caller
-    if(Criterion::dynamic)
+    if(true)
         priority_all();
-
+    
     Thread * prev = running();
     Thread * next = _scheduler.choose();
 
@@ -362,7 +361,6 @@ void Thread::time_slicer(IC::Interrupt_Id i)
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
-
     if(charge) {
         if(Criterion::dynamic) {
             prev->criterion()._finished_execution = true;

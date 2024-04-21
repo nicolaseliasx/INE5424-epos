@@ -18,7 +18,7 @@ void EDF::update() {
 
 LLF::LLF(const Microsecond & deadline, const Microsecond & period, const Microsecond & capacity, unsigned int): 
     // TODO: Todos os parametros são convertidos para ticks ????
-    Real_Time_Scheduler_Common(Alarm::ticks(deadline - capacity), Alarm::ticks(deadline), Alarm::ticks(period), Alarm::ticks(capacity)) {
+    Real_Time_Scheduler_Common(Alarm::ticks(deadline - capacity), Alarm::ticks(deadline),  Alarm::ticks(period),  Alarm::ticks(capacity)) {
         // TODO: Preciso de alguma forma salvar tempo de inicio para atualizar capacity depois
         _start = Alarm::elapsed();
     }

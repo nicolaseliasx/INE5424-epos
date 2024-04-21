@@ -12,6 +12,14 @@
     "string_view": "cpp",
     "span": "cpp",
     "ostream": "cpp",
-    "chrono": "cpp"
+    "chrono": "cpp",
+    "format": "cpp",
+    "bitset": "cpp",
+    "iosfwd": "cpp",
+    "istream": "cpp",
+    "optional": "cpp",
+    "streambuf": "cpp",
+    "functional": "cpp",
+    "tuple": "cpp"
   }
 }

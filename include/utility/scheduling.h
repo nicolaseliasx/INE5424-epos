@@ -26,6 +26,7 @@ class Scheduler: public Scheduling_Queue<T>
 {
 private:
     typedef Scheduling_Queue<T> Base;
+    typename Base::Iterator current_iterator;
 
 public:
     typedef typename T::Criterion Criterion;
@@ -33,7 +34,7 @@ public:
     typedef typename Queue::Element Element;
 
 public:
-    Scheduler() {}
+    Scheduler() : current_iterator(Base::begin()) {}
 
     unsigned int schedulables() { return Base::size(); }
 
@@ -103,11 +104,24 @@ public:
 
         return obj;
     }
-
+    // TODO: TALVEZ REMOVER O REMOVE_HEAD
     T * remove_head() {
         db<Scheduler>(TRC) << "Scheduler[remove_head=" << chosen() << "]::remove_head() => ";
         // TODO: Acho que a Base atual não tem o remove_head implementado, preciso implementar uma forma de desempilhar a cabeca
         return Base::remove_head()->object();
+    }
+
+    void reset_iterator() {
+        current_iterator = Base::begin();
+    }
+
+    T* next() {
+        if (current_iterator == Base::end()) {
+            return nullptr;
+        }
+        T* obj = current_iterator->object();
+        ++current_iterator;
+        return obj;
     }
 };
 
