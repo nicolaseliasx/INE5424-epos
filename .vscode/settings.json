@@ -10,6 +10,8 @@
     "vector": "cpp",
     "array": "cpp",
     "string_view": "cpp",
-    "span": "cpp"
+    "span": "cpp",
+    "ostream": "cpp",
+    "chrono": "cpp"
   }
 }

@@ -10,7 +10,7 @@ bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
-
+OStream cout;
 
 void Thread::constructor_prologue(unsigned int stack_size)
 {
@@ -112,29 +112,37 @@ void Thread::priority(const Criterion & c)
 
 void Thread::priority_all()
 {
+    lock();
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
-
-    assert(locked()); // locking handled by caller
 
     // TODO: Problema de acesso indevido nessa logica aqui precisa debuggar mais
     List<Thread> temporary_list;
     Thread* aux;
 
+    cout << "_scheduler.size(): " << _scheduler.size() << endl;
     while (!_scheduler.empty()) {
+        cout << "LOOP DE REMOVER" << endl;
+        cout << "LOOP DE REMOVER - !_scheduler.empty(): " << !_scheduler.empty() << endl;
         aux = _scheduler.remove_head();
+        cout << "LOOP DE REMOVER - aux: " << aux << endl;
         temporary_list.insert_tail(aux->link_element());
+        cout << "LOOP DE REMOVER - temporary_list.size(): " << temporary_list.size() << endl;
     }
 
     while (!temporary_list.empty()) {
+        cout << "LOOP DE ATT" << endl;
         aux = temporary_list.remove_head()->object();
-        // TODO: Tratar IDLE E MAIN? PRECISA?
-        if (aux->state() != RUNNING) {
+        cout << "LOOP DE ATT - aux: " << aux << endl;
+        if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
+            cout << "LOOP DE ATT - DENTRO DO IF DE ATUALIZAR: " << aux << endl;
             aux->criterion().update();
         }
         _scheduler.insert(aux);
+        cout << "_scheduler.size(): " << _scheduler.size() << endl;
     }
+    
+    unlock();
 }
-
 
 int Thread::join()
 {
@@ -291,8 +299,9 @@ void Thread::wakeup(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-    if(Criterion::dynamic)
-        priority_all();
+    // TODO: Verificar
+    // if(Criterion::dynamic)
+    //     priority_all();
 
     if(!q->empty()) {
         Thread * t = q->remove()->object();
@@ -357,6 +366,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     if(charge) {
         if(Criterion::dynamic) {
             prev->criterion()._finished_execution = true;
+            prev->criterion().update();
         }
         if(Criterion::timed)
             _timer->restart();

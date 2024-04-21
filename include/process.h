@@ -56,6 +56,7 @@ public:
 
     // Thread Queue
     typedef Ordered_Queue<Thread, Criterion, Scheduler<Thread>::Element> Queue;
+    // Element in the Thread List
     typedef List_Elements::Doubly_Linked<Thread> Element;
     // Thread Configuration
     struct Configuration {
