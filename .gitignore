@@ -29,10 +29,12 @@ img/
 
 app/philosophers_dinner/philosophers_dinner
 app/producer_consumer/producer_consumer
-tests/scheduler_llf_test/scheduler_llf_test
 app/scheduler_llf_test
 app/hello/hello
+tests/scheduler_llf_test/scheduler_llf_test
 
-# Remove this line if you are going to alter something in makedefs or makefile for EVERYONE
-# .*/makefile
-# .*/makedefs
+# Comment these lines if you are going to alter something in makedefs or makefile for EVERYONE
+**/makefile
+**/makedefs
+makefile
+makedefs
