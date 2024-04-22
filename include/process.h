@@ -83,6 +83,15 @@ public:
     void priority(const Criterion & p);
     static void priority_all();
 
+    // TODO: REVISAR NOMES
+    void priority_elevate(int max_priority) {
+        _old_priority = this->priority();
+        this->_link.rank(max_priority);
+    };
+    void priority_restore() {
+        this->_link.rank(_old_priority);
+    };
+
     int join();
     void pass();
     void suspend();
@@ -91,6 +100,8 @@ public:
     static Thread * volatile self() { return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1); }
     static void yield();
     static void exit(int status = 0);
+    
+    Element * link_element() { return &_link_element; }
 
 protected:
     void constructor_prologue(unsigned int stack_size);
@@ -98,7 +109,6 @@ protected:
 
     Criterion & criterion() { return const_cast<Criterion &>(_link.rank()); }
     Queue::Element * link() { return &_link; }
-    Element * link_element() { return &_link_element; }
 
     static Thread * volatile running() { return _scheduler.chosen(); }
 
@@ -134,6 +144,8 @@ protected:
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;
     static Scheduler<Thread> _scheduler;
+
+    int _old_priority;
 };
 
 

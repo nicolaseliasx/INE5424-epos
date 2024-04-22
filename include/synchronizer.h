@@ -33,6 +33,7 @@ protected:
 
 protected:
     Queue _queue;
+    List<Thread> _owners;
 };
 
 
