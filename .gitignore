@@ -1,11 +1,38 @@
+# IDE dependent files
+.idea/
+.vscode/
+
+# Log files
 *.log
 *.img
 *.o
 *.out
+*.txt
 
+# Epos config files
 epos.cfg
 eposcc.cfg
 
+# Generated files
 include/system/*.h
 
+# Tools (Dependent on user computer)
+tools/eposcc/eposcc
 tools/eposcc/
+tools/eposcfg/
+tools/eposmkbi/
+
+# Image files
+img/
+
+# We cant ignore folder of the executables inside app and test folders without ignoring the actual files we can edit
+
+app/philosophers_dinner/philosophers_dinner
+app/producer_consumer/producer_consumer
+tests/scheduler_llf_test/scheduler_llf_test
+app/scheduler_llf_test
+app/hello/hello
+
+# Remove this line if you are going to alter something in makedefs or makefile for EVERYONE
+# .*/makefile
+# .*/makedefs
