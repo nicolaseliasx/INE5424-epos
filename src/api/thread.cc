@@ -116,6 +116,8 @@ void Thread::priority_all() {
 
     Thread* aux;
     List<Thread> temporary_list;
+    // TODO: ALTERAR PARA UM FOR QUE COMECA NO BEGIN E VAI ATE O END
+    // for (auto it = _scheduler.begin(); it != _scheduler.end(); ++it) {
     _scheduler.reset_iterator();
     while ((aux = _scheduler.next()) != nullptr) {
         if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {

@@ -104,17 +104,19 @@ public:
 
         return obj;
     }
-    // TODO: TALVEZ REMOVER O REMOVE_HEAD
-    T * remove_head() {
-        db<Scheduler>(TRC) << "Scheduler[remove_head=" << chosen() << "]::remove_head() => ";
-        // TODO: Acho que a Base atual não tem o remove_head implementado, preciso implementar uma forma de desempilhar a cabeca
-        return Base::remove_head()->object();
+    // TODO: VERIFICAR SE FUNCIONA PARA SUBSTITUIR OS DE BAIXO
+    T * begin() {
+        return Base::begin();
     }
 
+    T * end() {
+        return Base::end();
+    }
+    // TODO: REMOVER ISSO
     void reset_iterator() {
         current_iterator = Base::begin();
     }
-
+    // TODO: REMOVER ISSO
     T* next() {
         if (current_iterator == Base::end()) {
             return nullptr;
