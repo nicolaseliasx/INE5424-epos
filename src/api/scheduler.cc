@@ -17,31 +17,22 @@ void EDF::update() {
 }
 
 LLF::LLF(const Microsecond & deadline, const Microsecond & period, const Microsecond & capacity, unsigned int): 
-    // TODO: Todos os parametros são convertidos para ticks ????
-    Real_Time_Scheduler_Common(Alarm::ticks(deadline - capacity), Alarm::ticks(deadline),  Alarm::ticks(period),  Alarm::ticks(capacity)) {
-        // TODO: Preciso de alguma forma salvar tempo de inicio para atualizar capacity depois
-        
-        // TODO - Preciso salvar o _start toda vez que a thread é preemptada/acordada, e além disso
-        // salvar o start agora não reflete o start da thread já que ela pode não ter começado a execução
-        _start = Alarm::elapsed();
-    }
+    Real_Time_Scheduler_Common((deadline - capacity), Alarm::ticks(deadline),  Alarm::ticks(period),  Alarm::ticks(capacity)) {}
 
 void LLF::update() {
-    // TODO: A DIF ENTRE O TEMPO _start - Alarm::elapsed() CASO NÃO SEJA MAIOR QUE _capacity DEVE SER ATUALIZADO
-    // TODO: Segundo tulio perca de deadline nao deve ser levada em conta pq teoricamente um llf nunca perde deadline
-    // TODO: SO DEVO ENTRAR AQUI CASO A THREAD EM QUESTAO ACONTECEU UMA TROCA DE CONTEXTO E ELA PAROU DE EXECUTAR
-    
-    // Devo atualizar o capacity sempre? Se a thread está na fila de prontos e ainda não executou eu atualizo a sua capacity?
-    
+    // _finished_execution é uma flag que indica se a execução da thread foi finalizada, ela eh setada no dispatch
     if (_finished_execution) {
-        // TODO: ONDE DEVO ATUALIZAR ISSO CORRETAMENTE TODAS AS CLASSES DEVEM IMPLEMENTAR ISSO? PRECISO TER ISSO EM COMUM PRA SE TAR NAS TROCAS DE CONTEXTO
         _finished_execution = false;
         _capacity = _capacity - (Alarm::elapsed() - _start);
     }
-    // TODO: Criar verificacao se acabou a execucao de seu deadline e atualizar a capacity caso não tenha acabado
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
         _priority = _deadline - (Alarm::elapsed() + _capacity);
 }
+
+void LLF::start_execution() {
+    _start = Alarm::elapsed();
+}
+
 
 // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.
 template FCFS::FCFS<>(int p);

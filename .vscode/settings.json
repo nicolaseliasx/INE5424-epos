@@ -20,6 +20,16 @@
     "optional": "cpp",
     "streambuf": "cpp",
     "functional": "cpp",
-    "tuple": "cpp"
+    "tuple": "cpp",
+    "initializer_list": "cpp",
+    "sstream": "cpp",
+    "type_traits": "cpp",
+    "utility": "cpp",
+    "forward_list": "cpp",
+    "cmath": "cpp",
+    "exception": "cpp",
+    "memory": "cpp",
+    "numeric": "cpp",
+    "valarray": "cpp"
   }
 }

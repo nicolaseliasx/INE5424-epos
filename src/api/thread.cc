@@ -99,10 +99,10 @@ void Thread::priority(const Criterion & c)
 
     if(_state != RUNNING) { // reorder the scheduling queue
         _scheduler.remove(this);
-        _link.rank(c);
+        _link.rank(Criterion(c));
         _scheduler.insert(this);
     } else
-        _link.rank(c);
+        _link.rank(Criterion(c));
 
     if(preemptive)
         reschedule();
@@ -113,30 +113,26 @@ void Thread::priority(const Criterion & c)
 void Thread::priority_all() {
     lock();
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
-    cout << "ELE TA AQUI priority_all()"<< endl;
 
     Thread* aux;
     List<Thread> temporary_list;
+    // TODO: ALTERAR PARA UM FOR QUE COMECA NO BEGIN E VAI ATE O END
+    // for (auto it = _scheduler.begin(); it != _scheduler.end(); ++it) {
     _scheduler.reset_iterator();
     while ((aux = _scheduler.next()) != nullptr) {
-        cout << "priority_all() AUX =" << aux << endl;
         if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
             aux->criterion().update();
-            aux->_link.rank(Criterion(aux->criterion()._priority));
-            temporary_list.insert_tail(aux->link_element());
+            temporary_list.insert(aux->link_element());
         }
     }
-
-    cout << "SAIU DO LOOP 1" << endl;
-
+    // TODO: Preciso de uma lista temporaria?
     while (!temporary_list.empty()) {
         aux = temporary_list.remove_head()->object();
         _scheduler.remove(aux);
+        aux->_link.rank(Criterion(aux->criterion()));
         _scheduler.insert(aux);
     }
-    
-    cout << "SAIU DO LOOP 2" << endl;
-    
+
     unlock();
 }
 
@@ -275,8 +271,8 @@ void Thread::sleep(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-    // if(Criterion::dynamic)
-    //     priority_all();
+    if(Criterion::dynamic)
+        priority_all();
 
     Thread * prev = running();
     _scheduler.suspend(prev);
@@ -295,10 +291,6 @@ void Thread::wakeup(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
-
-    // TODO: Verificar
-    // if(Criterion::dynamic)
-    //     priority_all();
 
     if(!q->empty()) {
         Thread * t = q->remove()->object();
@@ -337,10 +329,8 @@ void Thread::reschedule()
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
-    // TODO: alterar isso pra dynamic
-    
     assert(locked()); // locking handled by caller
-    if(true)
+    if(Criterion::dynamic)
         priority_all();
     
     Thread * prev = running();
@@ -363,6 +353,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
     if(charge) {
         if(Criterion::dynamic) {
+            // preciso chamar priority_all aqui?
             prev->criterion()._finished_execution = true;
             prev->criterion().update();
         }
@@ -388,6 +379,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // passing the volatile to switch_constext forces it to push prev onto the stack,
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
+        next->criterion().start_execution();
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
     }
 }
