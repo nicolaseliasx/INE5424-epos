@@ -225,6 +225,7 @@ public:
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
+    void start_execution();
 private:
     Microsecond _start;
 };
