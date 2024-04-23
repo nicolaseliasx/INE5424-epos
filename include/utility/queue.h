@@ -72,6 +72,9 @@ public:
     Element * choose_another() { return T::choose_another(); }
     Element * choose(Element * e) { return T::choose(e); }
     Element * choose(const Object_Type * obj) {	return T::choose(obj); }
+
+    Iterator begin() { return Iterator(T::head()); }
+    Iterator end() { return Iterator(T::tail()); }
 };
 
 

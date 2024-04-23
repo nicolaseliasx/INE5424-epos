@@ -110,14 +110,14 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
+// TODO: Deve ser chamado apenas antes de uma thread ser inserida na fila
 void Thread::priority_all() {
     lock();
+
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
-    Thread* aux;
-    // TODO: ALTERAR PARA UM FOR QUE COMECA NO BEGIN E VAI ATE O END
-    _scheduler.reset_iterator();
-    while ((aux = _scheduler.next()) != nullptr) {
+    for (auto it = _scheduler.begin(); it != _scheduler.end(); ++it) {
+        auto aux = it->object();
         if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
             aux->criterion().update();
             aux->_link.rank(aux->criterion());
@@ -202,8 +202,8 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
-        if(Criterion::dynamic)
-            priority_all();
+        // if(Criterion::dynamic)
+        //     priority_all();
 
         _state = READY;
         _scheduler.resume(this);
@@ -268,8 +268,8 @@ void Thread::sleep(Queue * q)
     assert(locked()); // locking handled by caller
 
     // TODO: THREAD SENDO REMOVIDA PRECISO ATUALIZAR?? ACHO QUE NAO NE
-    if(Criterion::dynamic)
-        priority_all();
+    // if(Criterion::dynamic)
+    //     priority_all();
 
     Thread * prev = running();
     _scheduler.suspend(prev);
@@ -290,8 +290,8 @@ void Thread::wakeup(Queue * q)
     assert(locked()); // locking handled by caller
 
     // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
-    if(Criterion::dynamic)
-        priority_all();
+    // if(Criterion::dynamic)
+    //     priority_all();
 
     if(!q->empty()) {
         Thread * t = q->remove()->object();
@@ -309,11 +309,13 @@ void Thread::wakeup_all(Queue * q)
 {
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
 
+    // TODO: Verificar todos os lugares que chamam wakeup_all
     assert(locked()); // locking handled by caller
 
     // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
-    if(Criterion::dynamic)
-        priority_all();
+    // if(Criterion::dynamic)
+    //     priority_all();
+
 
     if(!q->empty()) {
         while(!q->empty()) {
@@ -335,7 +337,7 @@ void Thread::reschedule()
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     // TODO: DESCOBRIR POR QUE ESSE ASSERT FALHA
-    // assert(locked()); // locking handled by caller
+    assert(locked()); // locking handled by caller
     // TODO: NAO PRECISA? ACREDITO QUE NAO PQ ISSO JA REFLETE A MAIS ATUALIZADA SE NADA FOI INSERIDO NA FILA DE PRONTOS
     // if(Criterion::dynamic)
     //     priority_all();
@@ -361,7 +363,8 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     if(charge) {
         if(Criterion::dynamic) {
             // TODO: LOGICA TA ATUALIZANDO TUDO POREM DA PREV ELE MUDARIA O CAPACITY
-            prev->criterion()._finished_execution = true;
+            // TODO: mudar para nova estatística 
+            //prev = true;
             priority_all();
         }
         if(Criterion::timed)
@@ -381,14 +384,15 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         }
         db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
+        if(Criterion::dynamic) {
+            next->criterion().set_start_execution();
+        }
+
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and
         // passing the volatile to switch_constext forces it to push prev onto the stack,
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
-        if(Criterion::dynamic)
-            next->criterion().start_execution();
-
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
     }
 }

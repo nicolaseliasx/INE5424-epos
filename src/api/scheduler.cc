@@ -21,18 +21,16 @@ LLF::LLF(const Microsecond & deadline, const Microsecond & period, const Microse
 
 void LLF::update() {
     // _finished_execution é uma flag que indica se a execução da thread foi finalizada, ela eh setada no dispatch
-    if (_finished_execution) {
-        _finished_execution = false;
-        _capacity = _capacity - (Alarm::elapsed() - _start);
+    if (has_stopped_execution) {
+        has_stopped_execution = false;
+        _capacity = _capacity - (Alarm::elapsed() - _statistics.last_thread_dispatch);
     }
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
         _priority = _deadline - (Alarm::elapsed() + _capacity);
 }
 
-void LLF::start_execution() {
-    _start = Alarm::elapsed();
-}
-
+// TODO: Trocar para nova estatistica ao inves de usar last_thread_dispatch 
+void LLF::set_start_execution() { _statistics.last_thread_dispatch = Alarm::elapsed(); }
 
 // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.
 template FCFS::FCFS<>(int p);

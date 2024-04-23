@@ -19,23 +19,24 @@ Mutex::~Mutex()
 void Mutex::lock()
 {
     db<Synchronizer>(TRC) << "Mutex::lock(this=" << this << ")" << endl;
+    db<Synchronizer>(WRN) << "Mutex::LOCK" << this << ")" << endl;
 
     begin_atomic();
     if(tsl(_locked)) {
-        // Thread* _owner = _owners.head();
-        // Thread* current = Thread::self();
-        // if(current->priority() > _owner->priority()) {
-        //     auto max_priority = current->priority();
-        //     // Eu itero sobre a fila waiting buscando se existe alguem que tenha a prioridade maior que a current
-        //     for (auto it = _queue.begin(); it != _queue.end(); ++it) {
-        //         auto aux = it->object();
-        //         if(aux->priority() > current->priority()) {
-        //             // se tem ela se torna a max
-        //             max_priority = aux->priority();
-        //         }
-        //     }
-        //     _owner->priority_elevate(max_priority);
-        // }
+        Thread* _owner = _owners.head()->object();
+        Thread* current = Thread::self();
+        if(current->priority() > _owner->priority()) {
+            int max_priority = current->priority();
+            // Eu itero sobre a fila waiting buscando se existe alguem que tenha a prioridade maior que a current
+            for (auto it = _queue.begin(); it != _queue.end(); ++it) {
+                auto aux = it->object();
+                if(aux->priority() > current->priority()) {
+                    // se tem ela se torna a max
+                    max_priority = aux->priority();
+                }
+            }
+            _owner->priority_elevate(max_priority);
+        }
         sleep();
     } else {
         _owners.insert(Thread::self()->link_element());

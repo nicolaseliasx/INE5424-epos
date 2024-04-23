@@ -21,6 +21,7 @@ class Scheduling_Criterion_Common
     friend class _SYS::Periodic_Thread;
     friend class _SYS::RT_Thread;
     friend class _SYS::Clerk<System>;         // for _statistics
+    friend class _SYS::Alarm;
 
 public:
     // Priorities
@@ -80,7 +81,7 @@ public:
     };
 
 protected:
-    Scheduling_Criterion_Common() {}
+    Scheduling_Criterion_Common(): _statistics() {}
 
 public:
     const Microsecond period() { return 0;}
@@ -99,6 +100,8 @@ public:
 
     static void init() {}
 
+    virtual void set_start_execution() {};
+
 protected:
     Statistics _statistics;
 };
@@ -116,11 +119,12 @@ public:
 
     operator const volatile int() const volatile { return _priority; }
 
-    // TODO: Avaliar se deve ficar aqui mesmo AAAAAAAA AONDE ISSO DEVE FICAR ISSO SO FUNCIONA SE FICAR AQUI
-    // TODO: DEVEMOS VERIFICAR SE REALMENTE DEVE FICAR AQUI
-    bool _finished_execution = false;
 protected:
     volatile int _priority;
+    // TODO: Avaliar se deve ficar aqui mesmo?
+    // TODO: DEVEMOS VERIFICAR SE REALMENTE DEVE FICAR AQUI
+    //APW: Acho que pode ficar aqui sim, junto do set_start_execution
+    volatile bool has_stopped_execution = false;
 };
 
 // Round-Robin
@@ -225,9 +229,7 @@ public:
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
-    void start_execution();
-private:
-    Microsecond _start;
+    void set_start_execution();
 };
 
 __END_SYS

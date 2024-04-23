@@ -13,7 +13,8 @@ __BEGIN_UTIL
 
 // Scheduling_Queue
 template<typename T, typename R = typename T::Criterion>
-class Scheduling_Queue: public Scheduling_List<T> {};
+class Scheduling_Queue: public Scheduling_List<T> {
+};
 
 
 // Scheduler
@@ -26,15 +27,15 @@ class Scheduler: public Scheduling_Queue<T>
 {
 private:
     typedef Scheduling_Queue<T> Base;
-    typename Base::Iterator current_iterator;
 
 public:
     typedef typename T::Criterion Criterion;
     typedef Scheduling_List<T, Criterion> Queue;
+    typedef typename Queue::Iterator Iterator;
     typedef typename Queue::Element Element;
 
 public:
-    Scheduler() : current_iterator(Base::begin()) {}
+    Scheduler() {}
 
     unsigned int schedulables() { return Base::size(); }
 
@@ -102,27 +103,6 @@ public:
 
         db<Scheduler>(TRC) << obj << endl;
 
-        return obj;
-    }
-    // TODO: VERIFICAR SE FUNCIONA PARA SUBSTITUIR OS DE BAIXO
-    T * begin() {
-        return Base::begin();
-    }
-
-    T * end() {
-        return Base::end();
-    }
-    // TODO: REMOVER ISSO
-    void reset_iterator() {
-        current_iterator = Base::begin();
-    }
-    // TODO: REMOVER ISSO
-    T* next() {
-        if (current_iterator == Base::end()) {
-            return nullptr;
-        }
-        T* obj = current_iterator->object();
-        ++current_iterator;
         return obj;
     }
 };
