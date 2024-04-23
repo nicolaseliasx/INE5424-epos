@@ -57,9 +57,11 @@ inline void exec(char c, int x, int y, unsigned int time = 0) // in miliseconds
 
     for (int i = 1; i < 10000; i++) {
         // Some random calculations to pass the time
-        int res_x = result + y;
-        int res_y = (x - y)*0.26 + (x - y)*i*0.15 - res_x;
-        result = res_y - res_x;
+        // int res_x = result + y;
+        // int res_y = (x - y)*0.26 + (x - y)*i*0.15 - res_x;
+        // result = res_y - res_x;
+
+        result = x + y * i - i*(i-x*y);
     }
 
     calculator.unlock();
