@@ -334,8 +334,9 @@ void Thread::reschedule()
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
+    // TODO: DESCOBRIR POR QUE ESSE ASSERT FALHA
     // assert(locked()); // locking handled by caller
-    // TODO: NAO PRECISA?
+    // TODO: NAO PRECISA? ACREDITO QUE NAO PQ ISSO JA REFLETE A MAIS ATUALIZADA SE NADA FOI INSERIDO NA FILA DE PRONTOS
     // if(Criterion::dynamic)
     //     priority_all();
     
@@ -385,7 +386,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // passing the volatile to switch_constext forces it to push prev onto the stack,
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
-        next->criterion().start_execution();
+        if(Criterion::dynamic)
+            next->criterion().start_execution();
+
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
     }
 }
