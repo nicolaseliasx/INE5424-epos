@@ -115,22 +115,12 @@ void Thread::priority_all() {
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
     Thread* aux;
-    List<Thread> temporary_list;
     // TODO: ALTERAR PARA UM FOR QUE COMECA NO BEGIN E VAI ATE O END
-    // for (auto it = _scheduler.begin(); it != _scheduler.end(); ++it) {
     _scheduler.reset_iterator();
     while ((aux = _scheduler.next()) != nullptr) {
         if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
             aux->criterion().update();
-            temporary_list.insert(aux->link_element());
         }
-    }
-    // TODO: Preciso de uma lista temporaria?
-    while (!temporary_list.empty()) {
-        aux = temporary_list.remove_head()->object();
-        _scheduler.remove(aux);
-        aux->_link.rank(Criterion(aux->criterion()));
-        _scheduler.insert(aux);
     }
 
     unlock();
