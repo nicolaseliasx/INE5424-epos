@@ -29,8 +29,9 @@ int func_d();
 int func_e();
 long max(unsigned int a, unsigned int b, unsigned int c) { return ((a >= b) && (a >= c)) ? a : ((b >= a) && (b >= c) ? b : c); }
 
-Mutex calculator;
-Semaphore speaker;
+//Mutex calculator;
+Semaphore calculator(3);
+Semaphore speaker(3);
 
 OStream cout;
 Chronometer chrono;
@@ -51,7 +52,9 @@ inline void exec(char c, int x, int y, unsigned int time = 0) // in miliseconds
     << ", p(D)=" << thread_d->priority()
     << ", p(E)=" << thread_e->priority() << "]" << "\n";
 
-    calculator.lock();
+    //calculator.lock();
+    cout << "Im " << c << " and im trying to get the semaphore\n";
+    calculator.p();
 
     int result = x;
 
@@ -61,10 +64,13 @@ inline void exec(char c, int x, int y, unsigned int time = 0) // in miliseconds
         // int res_y = (x - y)*0.26 + (x - y)*i*0.15 - res_x;
         // result = res_y - res_x;
 
+        Delay thinking_about_calculation(10000);
         result = x + y * i - i*(i-x*y);
+        
     }
 
-    calculator.unlock();
+    //calculator.unlock();
+    calculator.v();
 
     speaker.p();
     cout << "Im " << c << ", my result is: " << result << " ! and Ive took: " << (chrono.read() / 1000 - elapsed) << "\n";

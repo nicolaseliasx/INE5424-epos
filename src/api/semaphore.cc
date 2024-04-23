@@ -21,7 +21,15 @@ void Semaphore::p()
     db<Synchronizer>(TRC) << "Semaphore::p(this=" << this << ",value=" << _value << ")" << endl;
 
     begin_atomic();
+
     if(fdec(_value) < 1) {
+        // TODO: Remover para entrega -- Adiciona overhead no lock
+        db<Synchronizer>(WRN) << "Lista de owners do Semaforo\n";
+        for (auto it = _owners.begin(); it != _owners.end(); ++it) {
+            db<Synchronizer>(WRN) << it->object() << "\n";
+        }
+        db<Synchronizer>(WRN) << "Final da lista\n";
+
         // Não obtem o semaforo
         // Percorro toda a lista de owners vendo se a thread que tentou um p() tem prioridade maior que os owners
         // TODO: ISSO AQUI TA ITERANDO DIREITO?

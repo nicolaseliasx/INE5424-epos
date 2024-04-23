@@ -24,6 +24,15 @@ void Mutex::lock()
     begin_atomic();
     if(tsl(_locked)) {
         Thread* _owner = _owners.head()->object();
+        
+        // TODO: Remover para entrega -- Adiciona overhead no lock
+        db<Synchronizer>(WRN) << "Lista de owners do mutex\n";
+        for (auto it = _owners.begin(); it != _owners.end(); ++it) {
+            db<Synchronizer>(WRN) << it->object() << "\n";
+        }
+        db<Synchronizer>(WRN) << "Final da lista\n";
+
+
         Thread* current = Thread::self();
         if(current->priority() > _owner->priority()) {
             int max_priority = current->priority();
