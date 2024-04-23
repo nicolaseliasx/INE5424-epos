@@ -25,6 +25,8 @@ const unsigned int wcet_e = 8; // ms
 int func_a();
 int func_b();
 int func_c();
+int func_d();
+int func_e();
 long max(unsigned int a, unsigned int b, unsigned int c) { return ((a >= b) && (a >= c)) ? a : ((b >= a) && (b >= c) ? b : c); }
 
 Mutex calculator;
@@ -47,20 +49,23 @@ inline void exec(char c, int x, int y, unsigned int time = 0) // in miliseconds
     << ", p(B)=" << thread_b->priority()
     << ", p(C)=" << thread_c->priority()
     << ", p(D)=" << thread_d->priority()
-    << ", p(E)=" << thread_e->priority() << "]";
+    << ", p(E)=" << thread_e->priority() << "]" << "\n";
 
     calculator.lock();
 
     int result = x;
 
-    for (int i = 1; i < 10; i++) {
-        result += y
+    for (int i = 1; i < 10000; i++) {
+        // Some random calculations to pass the time
+        int res_x = result + y;
+        int res_y = (x - y)*0.26 + (x - y)*i*0.15 - res_x;
+        result = res_y - res_x;
     }
 
     calculator.unlock();
 
     speaker.p();
-    cout << "my result is: " << result << " ! and Ive took: " << (chrono.read() / 1000 - elapsed);
+    cout << "Im " << c << ", my result is: " << result << " ! and Ive took: " << (chrono.read() / 1000 - elapsed) << "\n";
     speaker.v();
 }
 

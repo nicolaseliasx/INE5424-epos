@@ -19,7 +19,7 @@ Mutex::~Mutex()
 void Mutex::lock()
 {
     db<Synchronizer>(TRC) << "Mutex::lock(this=" << this << ")" << endl;
-    db<Synchronizer>(WRN) << "Mutex::LOCK" << this << ")" << endl;
+    db<Synchronizer>(WRN) << "Mutex::LOCK" << this << ")" << "\n" << endl;
 
     begin_atomic();
     if(tsl(_locked)) {
