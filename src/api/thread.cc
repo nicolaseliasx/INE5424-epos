@@ -138,7 +138,7 @@ int Thread::join()
 
     // Precondition: a single joiner
     assert(!_joining);
-
+    // TODO: UMA BOA CHAMAR AQUI PRIORITY ALL???
     if(_state != FINISHING) {
         Thread * prev = running();
 
@@ -180,7 +180,7 @@ void Thread::suspend()
     lock();
 
     db<Thread>(TRC) << "Thread::suspend(this=" << this << ")" << endl;
-
+    // TODO: UMA BOA CHAMAR AQUI PRIORITY ALL???
     Thread * prev = running();
 
     _state = SUSPENDED;
@@ -201,6 +201,9 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
+        if(Criterion::dynamic)
+            priority_all();
+
         _state = READY;
         _scheduler.resume(this);
 
@@ -234,6 +237,8 @@ void Thread::exit(int status)
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
 
+    // TODO: PRECISO CHAMAR UPDATE ALL AQUI? UMA THREAD VAI SER REMOVIDA DA FILA DE PRONTOS, ACHO QUE NAO INFLUENCIA PQ TERMINOU
+
     Thread * prev = running();
     _scheduler.remove(prev);
     prev->_state = FINISHING;
@@ -261,6 +266,7 @@ void Thread::sleep(Queue * q)
 
     assert(locked()); // locking handled by caller
 
+    // TODO: THREAD SENDO REMOVIDA PRECISO ATUALIZAR?? ACHO QUE NAO NE
     if(Criterion::dynamic)
         priority_all();
 
@@ -282,6 +288,10 @@ void Thread::wakeup(Queue * q)
 
     assert(locked()); // locking handled by caller
 
+    // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
+    if(Criterion::dynamic)
+        priority_all();
+
     if(!q->empty()) {
         Thread * t = q->remove()->object();
         t->_state = READY;
@@ -299,6 +309,10 @@ void Thread::wakeup_all(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
+
+    // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
+    if(Criterion::dynamic)
+        priority_all();
 
     if(!q->empty()) {
         while(!q->empty()) {
@@ -320,8 +334,9 @@ void Thread::reschedule()
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
-    if(Criterion::dynamic)
-        priority_all();
+    // TODO: NAO PRECISA?
+    // if(Criterion::dynamic)
+    //     priority_all();
     
     Thread * prev = running();
     Thread * next = _scheduler.choose();
@@ -343,9 +358,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
     if(charge) {
         if(Criterion::dynamic) {
-            // preciso chamar priority_all aqui?
+            // TODO: LOGICA TA ATUALIZANDO TUDO POREM DA PREV ELE MUDARIA O CAPACITY
             prev->criterion()._finished_execution = true;
-            prev->criterion().update();
+            priority_all();
         }
         if(Criterion::timed)
             _timer->restart();
