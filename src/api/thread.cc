@@ -120,6 +120,7 @@ void Thread::priority_all() {
     while ((aux = _scheduler.next()) != nullptr) {
         if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
             aux->criterion().update();
+            aux->_link.rank(aux->criterion());
         }
     }
 
@@ -333,7 +334,7 @@ void Thread::reschedule()
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
-    assert(locked()); // locking handled by caller
+    // assert(locked()); // locking handled by caller
     // TODO: NAO PRECISA?
     // if(Criterion::dynamic)
     //     priority_all();

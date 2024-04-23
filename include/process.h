@@ -84,13 +84,13 @@ public:
     static void priority_all();
 
     // TODO: REVISAR NOMES
-    void priority_elevate(int max_priority) {
-        _old_priority = this->priority();
-        this->_link.rank(max_priority);
-    };
-    void priority_restore() {
-        this->_link.rank(_old_priority);
-    };
+    // void priority_elevate(int max_priority) {
+    //     _old_priority = this->priority();
+    //     this->_link.rank(max_priority);
+    // };
+    // void priority_restore() {
+    //     this->_link.rank(_old_priority);
+    // };
 
     int join();
     void pass();
