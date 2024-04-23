@@ -115,22 +115,13 @@ void Thread::priority_all() {
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
     Thread* aux;
-    List<Thread> temporary_list;
     // TODO: ALTERAR PARA UM FOR QUE COMECA NO BEGIN E VAI ATE O END
-    // for (auto it = _scheduler.begin(); it != _scheduler.end(); ++it) {
     _scheduler.reset_iterator();
     while ((aux = _scheduler.next()) != nullptr) {
         if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
             aux->criterion().update();
-            temporary_list.insert(aux->link_element());
+            aux->_link.rank(aux->criterion());
         }
-    }
-    // TODO: Preciso de uma lista temporaria?
-    while (!temporary_list.empty()) {
-        aux = temporary_list.remove_head()->object();
-        _scheduler.remove(aux);
-        aux->_link.rank(Criterion(aux->criterion()));
-        _scheduler.insert(aux);
     }
 
     unlock();
@@ -148,7 +139,7 @@ int Thread::join()
 
     // Precondition: a single joiner
     assert(!_joining);
-
+    // TODO: UMA BOA CHAMAR AQUI PRIORITY ALL???
     if(_state != FINISHING) {
         Thread * prev = running();
 
@@ -190,7 +181,7 @@ void Thread::suspend()
     lock();
 
     db<Thread>(TRC) << "Thread::suspend(this=" << this << ")" << endl;
-
+    // TODO: UMA BOA CHAMAR AQUI PRIORITY ALL???
     Thread * prev = running();
 
     _state = SUSPENDED;
@@ -211,6 +202,9 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
+        if(Criterion::dynamic)
+            priority_all();
+
         _state = READY;
         _scheduler.resume(this);
 
@@ -244,6 +238,8 @@ void Thread::exit(int status)
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
 
+    // TODO: PRECISO CHAMAR UPDATE ALL AQUI? UMA THREAD VAI SER REMOVIDA DA FILA DE PRONTOS, ACHO QUE NAO INFLUENCIA PQ TERMINOU
+
     Thread * prev = running();
     _scheduler.remove(prev);
     prev->_state = FINISHING;
@@ -271,6 +267,7 @@ void Thread::sleep(Queue * q)
 
     assert(locked()); // locking handled by caller
 
+    // TODO: THREAD SENDO REMOVIDA PRECISO ATUALIZAR?? ACHO QUE NAO NE
     if(Criterion::dynamic)
         priority_all();
 
@@ -292,6 +289,10 @@ void Thread::wakeup(Queue * q)
 
     assert(locked()); // locking handled by caller
 
+    // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
+    if(Criterion::dynamic)
+        priority_all();
+
     if(!q->empty()) {
         Thread * t = q->remove()->object();
         t->_state = READY;
@@ -309,6 +310,10 @@ void Thread::wakeup_all(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
+
+    // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
+    if(Criterion::dynamic)
+        priority_all();
 
     if(!q->empty()) {
         while(!q->empty()) {
@@ -329,9 +334,11 @@ void Thread::reschedule()
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
-    assert(locked()); // locking handled by caller
-    if(Criterion::dynamic)
-        priority_all();
+    // TODO: DESCOBRIR POR QUE ESSE ASSERT FALHA
+    // assert(locked()); // locking handled by caller
+    // TODO: NAO PRECISA? ACREDITO QUE NAO PQ ISSO JA REFLETE A MAIS ATUALIZADA SE NADA FOI INSERIDO NA FILA DE PRONTOS
+    // if(Criterion::dynamic)
+    //     priority_all();
     
     Thread * prev = running();
     Thread * next = _scheduler.choose();
@@ -353,9 +360,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
     if(charge) {
         if(Criterion::dynamic) {
-            // preciso chamar priority_all aqui?
+            // TODO: LOGICA TA ATUALIZANDO TUDO POREM DA PREV ELE MUDARIA O CAPACITY
             prev->criterion()._finished_execution = true;
-            prev->criterion().update();
+            priority_all();
         }
         if(Criterion::timed)
             _timer->restart();
@@ -379,7 +386,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // passing the volatile to switch_constext forces it to push prev onto the stack,
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
-        next->criterion().start_execution();
+        if(Criterion::dynamic)
+            next->criterion().start_execution();
+
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
     }
 }
