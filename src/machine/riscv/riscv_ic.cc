@@ -13,6 +13,16 @@ __BEGIN_SYS
 PLIC::Reg32 PLIC::_claimed;
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
 
+// Isso acontece pois o tempo entre interrupções é menor que o tempo necessário para executar o entry
+// A criação de uma função profiling deve ser feita usando uma variável (?) que seta caso
+// entry iniciou a execução que é limpada quando a função termina. Caso quando a função inicia
+// essa variável já está setada, então quer dizer que estamos causando reentrancia no método dispatch 
+
+// Dispatch é aonde nós executamos a ecall para chamarmos int_m2s e onde é tratada a interrupção
+
+// Como fazer com que o profiling (se for feito dentro do iC::entry) seja retornado para que o valor
+// seja utilizado no setup do risc v?
+// Profiling também pode executar um teste e retornar os valores recomendados
 void IC::entry()
 {
     // Save context into the stack

@@ -21,6 +21,21 @@ public:
     static const unsigned long NOT_USED         = -1UL;
 
     // RISC-V mode for library
+    // TODO: Alterar para false e arrumar todos os lugares onde isso é usado
+    // Desligar a MMU, abrir com ctrl + A + C para abrir o terminal do QEMU
+    // Precisamos desligar a SATP -
+    // Sem fazer o setup do paging é possível rodar o programa - como vamos desligar o SATP 
+    // temos que desligar/desativar o setup das páginas 
+
+    // SATP é um registrador que aponta para o nível primário 
+    // Se setarmos esses bits do SATP para 
+    // Não estaremos mais o setup do m2s pois não estamos repassando as interrupções 
+    // Não precisamos também inicializar o setup do paging e o enable paging, já que estamos
+    // com a MMU desligada
+
+    // Deixar a CPU 0 (1 - cpu heterogenea) desligada sempre
+
+    
     static const bool supervisor = true;                                                        // Run EPOS library in supervisor mode
 
     // CPU numbering
