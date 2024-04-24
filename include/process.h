@@ -83,12 +83,9 @@ public:
     void priority(const Criterion & p);
     static void priority_all();
 
-    // TODO: REVISAR NOMES
     void priority_elevate(int max_priority) {
         _old_priority = this->priority();
         this->_link.rank(Criterion(max_priority));
-        // TODO: Nao precisa tirar e reinserir na lista pq ela ja detem o semaforo
-        // this->priority(max_priority);
     };
     void priority_restore() {
         this->_link.rank(_old_priority);

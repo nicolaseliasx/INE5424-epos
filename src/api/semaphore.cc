@@ -24,29 +24,29 @@ void Semaphore::p()
 
     if(fdec(_value) < 1) {
         // TODO: Remover para entrega -- Adiciona overhead no lock
-        db<Synchronizer>(WRN) << "Lista de owners do Semaforo\n";
-        for (auto it = _owners.begin(); it != _owners.end(); ++it) {
-            db<Synchronizer>(WRN) << it->object() << "\n";
-        }
-        db<Synchronizer>(WRN) << "Final da lista\n";
+        // db<Synchronizer>(WRN) << "Lista de owners do Semaforo\n" << endl;
+        // for (auto it = _owners.begin(); it != _owners.end(); ++it) {
+        //     db<Synchronizer>(WRN) << it->object() << endl;
+        // }
+        // db<Synchronizer>(WRN) << "Final da lista\n" << endl;
 
         // Não obtem o semaforo
         // Percorro toda a lista de owners vendo se a thread que tentou um p() tem prioridade maior que os owners
-        // TODO: ISSO AQUI TA ITERANDO DIREITO?
         for (auto it = _owners.begin(); it != _owners.end(); ++it) {
             Thread* owner = it->object();
             Thread* current = Thread::self();
             // Caso a thread que chegou ter a prioridade maior que a owner
-            if (current->priority() > owner->priority()) {
+            if (current->priority() < owner->priority()) {
                 int max_priority = current->priority();
                 // Eu itero sobre a fila waiting buscando se existe alguem que tenha a prioridade maior que a current
                 for (auto it = _queue.begin(); it != _queue.end(); ++it) {
                     auto aux = it->object();
-                    if(aux->priority() > current->priority()) {
+                    if(aux->priority() < current->priority()) {
                         // se tem ela se torna a max
                         max_priority = aux->priority();
                     }
                 }
+                db<Synchronizer>(WRN) << "ELEVATE PRIORITY FOR = "<< max_priority << endl;
                 owner->priority_elevate(max_priority);
             }
         }
@@ -55,6 +55,11 @@ void Semaphore::p()
     } else {
         // add ao detentor do semaforo
         _owners.insert(Thread::self()->link_element());
+        db<Synchronizer>(WRN) << "Lista de owners do Semaforo\n" << endl;
+        for (auto it = _owners.begin(); it != _owners.end(); ++it) {
+            db<Synchronizer>(WRN) << it->object() << endl;
+        }
+        db<Synchronizer>(WRN) << "Final da lista\n" << endl;
     }
         
     end_atomic();
@@ -70,7 +75,7 @@ void Semaphore::v()
         wakeup();
     }
     Thread* current = Thread::self();
-    // current->priority_restore();
+    current->priority_restore();
     _owners.remove(current->link_element());
         
     end_atomic();

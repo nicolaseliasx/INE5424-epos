@@ -34,7 +34,7 @@ app/hello/hello
 tests/scheduler_llf_test/scheduler_llf_test
 
 # Comment these lines if you are going to alter something in makedefs or makefile for EVERYONE
-**/makefile
-**/makedefs
-makefile
-makedefs
+# **/makefile
+# **/makedefs
+# makefile
+# makedefs

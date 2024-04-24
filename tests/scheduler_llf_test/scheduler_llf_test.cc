@@ -5,13 +5,13 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 100;
+const unsigned int iterations = 20;
 const unsigned int period_a = 100; // ms
 const unsigned int period_b = 80; // ms
 const unsigned int period_c = 60; // ms
-const unsigned int a_factorial = 13; // ms
-const unsigned int b_factorial = 10; // ms
-const unsigned int c_factorial = 8; // ms
+const unsigned int a_factorial = 13;
+const unsigned int b_factorial = 10;
+const unsigned int c_factorial = 8;
 
 int func_a();
 int func_b();
@@ -55,9 +55,9 @@ int main()
     cout << "Periodic Thread Component Test" << endl;
 
     cout << "\nThis test consists in creating three periodic threads as follows:" << endl;
-    cout << "- Every " << period_a << "ms, thread A execs \"a\", calculate factorial for " << a_factorial << "ms and then execs another \"a\";" << endl;
-    cout << "- Every " << period_b << "ms, thread B execs \"b\", calculate factorial for " << b_factorial << "ms and then execs another \"b\";" << endl;
-    cout << "- Every " << period_c << "ms, thread C execs \"c\", calculate factorial for " << c_factorial << "ms and then execs another \"c\";" << endl;
+    cout << "- Every " << period_a << "ms, thread A execs \"a\", calculate factorial for " << a_factorial << " and then execs another \"a\";" << endl;
+    cout << "- Every " << period_b << "ms, thread B execs \"b\", calculate factorial for " << b_factorial << " and then execs another \"b\";" << endl;
+    cout << "- Every " << period_c << "ms, thread C execs \"c\", calculate factorial for " << c_factorial << " and then execs another \"c\";" << endl;
 
     cout << "Threads will now be created and I'll wait for them to finish..." << endl;
 

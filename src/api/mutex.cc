@@ -19,27 +19,26 @@ Mutex::~Mutex()
 void Mutex::lock()
 {
     db<Synchronizer>(TRC) << "Mutex::lock(this=" << this << ")" << endl;
-    db<Synchronizer>(WRN) << "Mutex::LOCK" << this << ")" << "\n" << endl;
 
     begin_atomic();
     if(tsl(_locked)) {
         Thread* _owner = _owners.head()->object();
-        
-        // TODO: Remover para entrega -- Adiciona overhead no lock
-        db<Synchronizer>(WRN) << "Lista de owners do mutex\n";
-        for (auto it = _owners.begin(); it != _owners.end(); ++it) {
-            db<Synchronizer>(WRN) << it->object() << "\n";
-        }
-        db<Synchronizer>(WRN) << "Final da lista\n";
+        // TODO: @ARTHUR FALTOU O ENDL NO FINAL DAS COISAS PRA PRINTAR DIREITO
+        // // TODO: Remover para entrega -- Adiciona overhead no lock
+        // db<Synchronizer>(WRN) << "Lista de owners do mutex\n";
+        // for (auto it = _owners.begin(); it != _owners.end(); ++it) {
+        //     db<Synchronizer>(WRN) << it->object() << "\n";
+        // }
+        // db<Synchronizer>(WRN) << "Final da lista\n";
 
 
         Thread* current = Thread::self();
-        if(current->priority() > _owner->priority()) {
+        if(current->priority() < _owner->priority()) {
             int max_priority = current->priority();
             // Eu itero sobre a fila waiting buscando se existe alguem que tenha a prioridade maior que a current
             for (auto it = _queue.begin(); it != _queue.end(); ++it) {
                 auto aux = it->object();
-                if(aux->priority() > current->priority()) {
+                if(aux->priority() < current->priority()) {
                     // se tem ela se torna a max
                     max_priority = aux->priority();
                 }
@@ -67,7 +66,7 @@ void Mutex::unlock()
         wakeup();
     }
     Thread* _owner = _owners.head()->object();
-    // _owner->priority_restore();
+    _owner->priority_restore();
     _owners.remove(_owner);
     end_atomic();
 }

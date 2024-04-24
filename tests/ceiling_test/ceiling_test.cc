@@ -53,7 +53,7 @@ inline void exec(char c, int x, int y, unsigned int time = 0) // in miliseconds
     << ", p(E)=" << thread_e->priority() << "]" << "\n";
 
     //calculator.lock();
-    cout << "Im " << c << " and im trying to get the semaphore\n";
+    cout << "Im " << c << " and im trying to get the semaphore\n" << endl;
     calculator.p();
 
     int result = x;
@@ -64,7 +64,7 @@ inline void exec(char c, int x, int y, unsigned int time = 0) // in miliseconds
         // int res_y = (x - y)*0.26 + (x - y)*i*0.15 - res_x;
         // result = res_y - res_x;
 
-        Delay thinking_about_calculation(10000);
+        // Delay thinking_about_calculation(10000);
         result = x + y * i - i*(i-x*y);
         
     }
@@ -73,7 +73,7 @@ inline void exec(char c, int x, int y, unsigned int time = 0) // in miliseconds
     calculator.v();
 
     speaker.p();
-    cout << "Im " << c << ", my result is: " << result << " ! and Ive took: " << (chrono.read() / 1000 - elapsed) << "\n";
+    cout << "Im " << c << ", my result is: " << result << " ! and Ive took: " << (chrono.read() / 1000 - elapsed) << "\n" << endl;
     speaker.v();
 }
 
@@ -92,17 +92,22 @@ int main()
     cout << "Threads will now be created and I'll wait for them to finish..." << endl;
 
     // p,d,c,act,t
-    thread_a = new Periodic_Thread(RTConf(period_a * 100, 0, 0, 0, iterations), &func_a);
-    thread_b = new Periodic_Thread(RTConf(period_b * 100, 0, 0, 0, iterations), &func_b);
-    thread_c = new Periodic_Thread(RTConf(period_c * 100, 0, 0, 0, iterations), &func_c);
-    thread_d = new Periodic_Thread(RTConf(period_c * 100, 0, 0, 0, iterations), &func_d);
-    thread_e = new Periodic_Thread(RTConf(period_c * 100, 0, 0, 0, iterations), &func_e);
+    // TODO: ARTHUR TESTAR COM PRIORIDADES DIFERENTES
+    // TODO: TEM QUE PARAR COM BASTANTE CALMA UM DOCINHO DO LADO E RABISCAR O QUE DEVERIA ACONTECER COLOCAR MENOS THREADS QUE REALMENTE TESTEM A IONVERSAO ACONTECENDO
+    // TODO: COLOCAR POR EXEMPLO ESSA MESMA CONTA AI, POREM DOIS METODOS DIFERENTES QUE CONSOMEM O MESMO SEMAPHORE
+    // Parametros: period (us), deadline (us), capacity (us), activation (us), times
+    // TODO: COLOQUEI VALORES ALETATORIOS SO PRA VER SE IA QUEBRAR
+    thread_a = new Periodic_Thread(RTConf(period_a * 100, period_a * 100, 100, 0, iterations), &func_a);
+    thread_b = new Periodic_Thread(RTConf(period_b * 100, period_b * 100, 120, 0, iterations), &func_b);
+    thread_c = new Periodic_Thread(RTConf(period_c * 100, period_b * 100, 130, 0, iterations), &func_c);
+    thread_d = new Periodic_Thread(RTConf(period_c * 100, period_b * 100, 140, 0, iterations), &func_d);
+    thread_e = new Periodic_Thread(RTConf(period_c * 100, period_b * 100, 150, 0, iterations), &func_e);
 
-    thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, wcet_a, 0, iterations), &func_a);
-    thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, wcet_b, 0, iterations), &func_b);
-    thread_c = new Periodic_Thread(RTConf(period_c * 1000, period_c * 1000, wcet_c, 0, iterations), &func_c);
-    thread_d = new Periodic_Thread(RTConf(period_d * 1000, period_d * 1000, wcet_d, 0, iterations), &func_d);
-    thread_e = new Periodic_Thread(RTConf(period_e * 1000, period_e * 1000, wcet_e, 0, iterations), &func_e);
+    thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, 100, 0, iterations), &func_a);
+    thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, 120, 0, iterations), &func_b);
+    thread_c = new Periodic_Thread(RTConf(period_c * 1000, period_c * 1000, 130, 0, iterations), &func_c);
+    thread_d = new Periodic_Thread(RTConf(period_d * 1000, period_d * 1000, 140, 0, iterations), &func_d);
+    thread_e = new Periodic_Thread(RTConf(period_e * 1000, period_e * 1000, 150, 0, iterations), &func_e);
 
     exec('M', 18942, 29384);
 

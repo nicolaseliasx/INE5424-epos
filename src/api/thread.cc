@@ -110,9 +110,9 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
-// TODO: Deve ser chamado apenas antes de uma thread ser inserida na fila
 void Thread::priority_all() {
-    lock();
+    // Alguns lugares que chamam essa função ja estão com o lock
+    if(!locked()) lock();
 
     db<Thread>(TRC) << "Thread::priority_all()" << endl;
 
@@ -124,7 +124,7 @@ void Thread::priority_all() {
         }
     }
 
-    unlock();
+    if(!locked()) unlock();
 }
 
 
@@ -139,7 +139,6 @@ int Thread::join()
 
     // Precondition: a single joiner
     assert(!_joining);
-    // TODO: UMA BOA CHAMAR AQUI PRIORITY ALL???
     if(_state != FINISHING) {
         Thread * prev = running();
 
@@ -181,7 +180,6 @@ void Thread::suspend()
     lock();
 
     db<Thread>(TRC) << "Thread::suspend(this=" << this << ")" << endl;
-    // TODO: UMA BOA CHAMAR AQUI PRIORITY ALL???
     Thread * prev = running();
 
     _state = SUSPENDED;
@@ -202,8 +200,8 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
-        // if(Criterion::dynamic)
-        //     priority_all();
+        if(Criterion::dynamic)
+            priority_all();
 
         _state = READY;
         _scheduler.resume(this);
@@ -238,8 +236,6 @@ void Thread::exit(int status)
 
     db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
 
-    // TODO: PRECISO CHAMAR UPDATE ALL AQUI? UMA THREAD VAI SER REMOVIDA DA FILA DE PRONTOS, ACHO QUE NAO INFLUENCIA PQ TERMINOU
-
     Thread * prev = running();
     _scheduler.remove(prev);
     prev->_state = FINISHING;
@@ -267,10 +263,6 @@ void Thread::sleep(Queue * q)
 
     assert(locked()); // locking handled by caller
 
-    // TODO: THREAD SENDO REMOVIDA PRECISO ATUALIZAR?? ACHO QUE NAO NE
-    // if(Criterion::dynamic)
-    //     priority_all();
-
     Thread * prev = running();
     _scheduler.suspend(prev);
     prev->_state = WAITING;
@@ -290,8 +282,8 @@ void Thread::wakeup(Queue * q)
     assert(locked()); // locking handled by caller
 
     // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
-    // if(Criterion::dynamic)
-    //     priority_all();
+    if(Criterion::dynamic)
+        priority_all();
 
     if(!q->empty()) {
         Thread * t = q->remove()->object();
@@ -312,9 +304,8 @@ void Thread::wakeup_all(Queue * q)
     // TODO: Verificar todos os lugares que chamam wakeup_all
     assert(locked()); // locking handled by caller
 
-    // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
-    // if(Criterion::dynamic)
-    //     priority_all();
+    if(Criterion::dynamic)
+        priority_all();
 
 
     if(!q->empty()) {
@@ -336,11 +327,7 @@ void Thread::reschedule()
     if(!Criterion::timed || Traits<Thread>::hysterically_debugged)
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
-    // TODO: DESCOBRIR POR QUE ESSE ASSERT FALHA
     assert(locked()); // locking handled by caller
-    // TODO: NAO PRECISA? ACREDITO QUE NAO PQ ISSO JA REFLETE A MAIS ATUALIZADA SE NADA FOI INSERIDO NA FILA DE PRONTOS
-    // if(Criterion::dynamic)
-    //     priority_all();
     
     Thread * prev = running();
     Thread * next = _scheduler.choose();
@@ -362,9 +349,8 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
     if(charge) {
         if(Criterion::dynamic) {
-            // TODO: LOGICA TA ATUALIZANDO TUDO POREM DA PREV ELE MUDARIA O CAPACITY
-            // TODO: mudar para nova estatística 
-            //prev = true;
+            // Com base no tempo de execução da thread, atualiza a capacidade da thread
+            prev->criterion().update_capacity();
             priority_all();
         }
         if(Criterion::timed)
@@ -384,8 +370,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         }
         db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
+        // TODO: VERIFICAR SE EXISTEM MAIS LUGARES ONDE PRECISO COLETAR INICIO DE EXECUCAO
         if(Criterion::dynamic) {
-            next->criterion().set_start_execution();
+            next->criterion().collect_start_time();
         }
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct

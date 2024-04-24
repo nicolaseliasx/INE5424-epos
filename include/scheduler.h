@@ -100,8 +100,6 @@ public:
 
     static void init() {}
 
-    virtual void set_start_execution() {};
-
 protected:
     Statistics _statistics;
 };
@@ -119,12 +117,11 @@ public:
 
     operator const volatile int() const volatile { return _priority; }
 
+    virtual void update_capacity();
+    virtual void collect_start_time();
+    
 protected:
     volatile int _priority;
-    // TODO: Avaliar se deve ficar aqui mesmo?
-    // TODO: DEVEMOS VERIFICAR SE REALMENTE DEVE FICAR AQUI
-    //APW: Acho que pode ficar aqui sim, junto do set_start_execution
-    volatile bool has_stopped_execution = false;
 };
 
 // Round-Robin
@@ -229,7 +226,10 @@ public:
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
-    void set_start_execution();
+    void update_capacity() override;
+    void collect_start_time() override;
+private:
+    Microsecond start_execution = 0;
 };
 
 __END_SYS

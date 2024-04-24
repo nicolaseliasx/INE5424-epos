@@ -157,6 +157,17 @@ build_scheduler_llf_test:
 run_scheduler_llf_test_only:
 		$(MAKE) APPLICATION=scheduler_llf_test run1
 
+run_ceiling_test: link_ceiling_test build_ceiling_test run_ceiling_test_only
+
+link_ceiling_test:
+		$(LINK) $(TST)/ceiling_test $(APP);
+
+build_ceiling_test:
+		$(MAKE) APPLICATION=ceiling_test clean1 all1
+
+run_ceiling_test_only:
+		$(MAKE) APPLICATION=ceiling_test run1
+
 .PHONY: prebuild_$(APPLICATION) posbuild_$(APPLICATION) prerun_$(APPLICATION)
 prebuild_$(APPLICATION):
 		@echo -n "Building $(APPLICATION) ..."
