@@ -5,7 +5,7 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 20;
+const unsigned int iterations = 100;
 const unsigned int period_a = 100; // ms
 const unsigned int period_b = 80; // ms
 const unsigned int period_c = 60; // ms
@@ -66,9 +66,9 @@ int main()
     // func_b (fatorial de 10): ~20ms
     // func_c (fatorial de 8): ~10ms
     // Parametros: period (us), deadline (us), capacity (us), activation (us), times
-    thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, 50, 0, iterations), &func_a);
-    thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, 20, 0, iterations), &func_b);
-    thread_c = new Periodic_Thread(RTConf(period_c * 1000, period_c * 1000, 10, 0, iterations), &func_c);
+    thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, 80 * 1000, 0, iterations), &func_a);
+    thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, 60 * 1000, 0, iterations), &func_b);
+    thread_c = new Periodic_Thread(RTConf(period_c * 1000, period_c * 1000, 40 * 1000, 0, iterations), &func_c);
 
     exec('M');
 

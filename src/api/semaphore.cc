@@ -23,24 +23,14 @@ void Semaphore::p()
     begin_atomic();
 
     if(fdec(_value) < 1) {
-        // TODO: Remover para entrega -- Adiciona overhead no lock
-        // db<Synchronizer>(WRN) << "Lista de owners do Semaforo\n" << endl;
-        // for (auto it = _owners.begin(); it != _owners.end(); ++it) {
-        //     db<Synchronizer>(WRN) << it->object() << endl;
-        // }
-        // db<Synchronizer>(WRN) << "Final da lista\n" << endl;
-
         // Não obtem o semaforo
         // Percorro toda a lista de owners vendo se a thread que tentou um p() tem prioridade maior que os owners
-        
         for (auto it = _owners.begin(); it != _owners.end(); ++it) {
             Thread* owner = it->object();
             Thread* current = Thread::self();
             // Caso a thread que chegou ter a prioridade maior que a owner
             if (current->priority() < owner->priority()) {
-                db<Synchronizer>(WRN) << "Thread " << current << " has lower priority than " << owner << ": inversion\n" << endl;
                 int max_priority = current->priority();
-                
                 // Eu itero sobre a fila waiting buscando se existe alguem que tenha a prioridade maior que a current
                 for (auto it = _queue.begin(); it != _queue.end(); ++it) {
                     auto aux = it->object();
@@ -49,7 +39,6 @@ void Semaphore::p()
                         max_priority = aux->priority();
                     }
                 }
-                db<Synchronizer>(WRN) << "ELEVATE PRIORITY OF "<< owner << " TO = "<< max_priority << endl;
                 owner->priority_elevate(max_priority);
             }
         }
@@ -58,11 +47,6 @@ void Semaphore::p()
     } else {
         // add ao detentor do semaforo
         _owners.insert(Thread::self()->link_element());
-        db<Synchronizer>(WRN) << "Lista de owners do Semaforo\n" << endl;
-        for (auto it = _owners.begin(); it != _owners.end(); ++it) {
-            db<Synchronizer>(WRN) << it->object() << endl;
-        }
-        db<Synchronizer>(WRN) << "Final da lista\n" << endl;
     }
         
     end_atomic();

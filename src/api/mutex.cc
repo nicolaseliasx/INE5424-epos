@@ -23,15 +23,6 @@ void Mutex::lock()
     begin_atomic();
     if(tsl(_locked)) {
         Thread* _owner = _owners.head()->object();
-        // TODO: @ARTHUR FALTOU O ENDL NO FINAL DAS COISAS PRA PRINTAR DIREITO
-        // // TODO: Remover para entrega -- Adiciona overhead no lock
-        // db<Synchronizer>(WRN) << "Lista de owners do mutex\n" << endl;
-        // for (auto it = _owners.begin(); it != _owners.end(); ++it) {
-        //     db<Synchronizer>(WRN) << it->object() << "\n" << endl;
-        // }
-        // db<Synchronizer>(WRN) << "Final da lista\n";
-
-
         Thread* current = Thread::self();
         if(current->priority() < _owner->priority()) {
             int max_priority = current->priority();

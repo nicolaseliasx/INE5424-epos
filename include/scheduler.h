@@ -80,6 +80,15 @@ public:
         static TSC::Time_Stamp _last_activation_time;                       // global time stamp of the last heuristic activation
     };
 
+    // Methos to collect statistics
+    void collect_thread_execution_time(TSC::Time_Stamp duration) {
+        _statistics.thread_execution_time += duration;
+    }
+
+    void collect_last_thread_dispatch(TSC::Time_Stamp timestamp) {
+        _statistics.last_thread_dispatch = timestamp;
+    }
+
 protected:
     Scheduling_Criterion_Common(): _statistics() {}
 
@@ -91,6 +100,7 @@ public:
     void queue(unsigned int q) {}
 
     bool update() { return false; }
+    bool update_capacity() { return false; }
 
     bool collect(bool end = false) { return false; }
     bool charge(bool end = false) { return true; }
@@ -117,9 +127,6 @@ public:
 
     operator const volatile int() const volatile { return _priority; }
 
-    virtual void update_capacity();
-    virtual void collect_start_time();
-    
 protected:
     volatile int _priority;
 };
@@ -226,10 +233,7 @@ public:
     LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
 
     void update();
-    void update_capacity() override;
-    void collect_start_time() override;
-private:
-    Microsecond start_execution = 0;
+    void update_capacity();
 };
 
 __END_SYS

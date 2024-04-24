@@ -17,24 +17,16 @@ void EDF::update() {
 }
 
 LLF::LLF(const Microsecond & deadline, const Microsecond & period, const Microsecond & capacity, unsigned int): 
-    Real_Time_Scheduler_Common((deadline - capacity), Alarm::ticks(deadline),  Alarm::ticks(period),  Alarm::ticks(capacity)) { start_execution = Alarm::elapsed(); }
+    Real_Time_Scheduler_Common((deadline - capacity), Alarm::ticks(deadline),  Alarm::ticks(period),  Alarm::ticks(capacity)) {}
 
 void LLF::update() {
+    _capacity = _capacity - _statistics.thread_execution_time;
     if((_priority >= PERIODIC) && (_priority < APERIODIC))
-        _priority = _deadline - (Alarm::elapsed() + _capacity);
-}
-
-// TODO: Avaliar se precisa ficar aqui mesmo, e todo o resto que ta no shceduler.h
-void LLF::collect_start_time() {
-    start_execution = Alarm::elapsed();
+        _priority = (_deadline - Alarm::elapsed() * 1000) - _capacity;
 }
 
 void LLF::update_capacity() {
-    auto elapsed_time = Alarm::elapsed() - start_execution;
-    if (elapsed_time < _capacity)
-        _capacity = _capacity - elapsed_time;
-    else
-        _capacity = 0;
+    _capacity = _capacity -  Alarm::ticks(_statistics.thread_execution_time);
 }
 
 // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.

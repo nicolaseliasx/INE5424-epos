@@ -30,6 +30,7 @@
     "exception": "cpp",
     "memory": "cpp",
     "numeric": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "mutex": "cpp"
   }
 }

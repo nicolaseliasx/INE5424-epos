@@ -200,9 +200,6 @@ void Thread::resume()
     db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
-        if(Criterion::dynamic)
-            priority_all();
-
         _state = READY;
         _scheduler.resume(this);
 
@@ -348,11 +345,8 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
     if(charge) {
-        if(Criterion::dynamic) {
-            // Com base no tempo de execução da thread, atualiza a capacidade da thread
+        if (Criterion::dynamic)
             prev->criterion().update_capacity();
-            priority_all();
-        }
         if(Criterion::timed)
             _timer->restart();
     }
@@ -370,10 +364,11 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         }
         db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
-        // TODO: VERIFICAR SE EXISTEM MAIS LUGARES ONDE PRECISO COLETAR INICIO DE EXECUCAO
-        if(Criterion::dynamic) {
-            next->criterion().collect_start_time();
-        }
+        // Collect statistics
+        TSC::Time_Stamp now = TSC::time_stamp();
+        prev->criterion().collect_thread_execution_time(now - prev->criterion().statistics().last_thread_dispatch);
+        next->criterion().collect_last_thread_dispatch(now);
+ 
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and
