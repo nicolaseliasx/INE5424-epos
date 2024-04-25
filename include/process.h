@@ -81,6 +81,7 @@ public:
 
     const volatile Criterion & priority() const { return _link.rank(); }
     void priority(const Criterion & p);
+
     static void priority_all();
 
     void priority_elevate(int max_priority) {
