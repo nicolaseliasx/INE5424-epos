@@ -18,59 +18,69 @@ const unsigned int wcet_c = 20;
 int func_a();
 int func_b();
 int func_c();
-long max(unsigned int a, unsigned int b, unsigned int c) { return ((a >= b) && (a >= c)) ? a : ((b >= a) && (b >= c) ? b : c); }
 
-Semaphore position(1);
+Semaphore position(2);  // Semáforo com duas posições
 
 OStream cout;
 Chronometer chrono;
-Periodic_Thread * thread_a;
-Periodic_Thread * thread_b;
-Periodic_Thread * thread_c;
+Periodic_Thread *thread_a;
+Periodic_Thread *thread_b;
+Periodic_Thread *thread_c;
 
 int main() {
-    cout << "Iniciando teste de protocolo de teto de prioridade" << endl;
+    cout << "Start ceiling protocol with inhert priority" << endl;
 
     thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, wcet_a * 1000, 0, iterations), &func_a);
     thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, wcet_b * 1000, 0, iterations), &func_b);
     thread_c = new Periodic_Thread(RTConf(period_c * 1000, period_c * 1000, wcet_c * 1000, 0, iterations), &func_c);
 
-    thread_a->join();
-    thread_b->join();
     thread_c->join();
+    thread_b->join();
+    thread_a->join();
 
-    cout << "Teste completo." << endl;
+    cout << "\nEND TEST" << endl;
 
     return 0;
 }
 
+void print_priorities(const char *label) {
+    cout << label << ": Thread A: " << thread_a->priority()
+         << ", Thread B: " << thread_b->priority()
+         << ", Thread C: " << thread_c->priority() << endl;
+}
+
 int func_a() {
-    cout << "Thread A (alta prioridade) tentando adquirir o semáforo." << endl;
-    Alarm::delay(200000);
-    thread_a->priority_elevate(0);
+    // Aguarda as outras threads menos prioritarias
+    Alarm::delay(100000);
+    print_priorities("A trying to acquire the semaphore");
+    // Seta no braço so para garantir que essa prioridade esteja bem alta
+    thread_a->priority_elevate(-500000);
     position.p();
-    cout << "Thread A adquiriu o semáforo." << endl;
+    print_priorities("A acquired the semaphore");
     position.v();
-    cout << "Thread A liberou o semáforo." << endl;
+    for (int i = 0; i < 70; ++i) {
+        print_priorities("A outside the semaphore");
+        Alarm::delay(5000);
+    }
     return 'A';
 }
 
 int func_b() {
-    cout << "Thread B (média prioridade) tentando adquirir o semáforo." << endl;
     position.p();
-    cout << "Thread B adquiriu o semáforo." << endl;
-    Alarm::delay(50000); // Delays to ensure it starts after A has started but before A gets the semaphore
+    for (int i = 0; i < 70; ++i) {
+        print_priorities("B inside");
+        Alarm::delay(5000);
+    }
     position.v();
-    cout << "Thread B liberou o semáforo." << endl;
     return 'B';
 }
 
 int func_c() {
-    cout << "Thread C (baixa prioridade) tentando adquirir o semáforo." << endl;
     position.p();
-    cout << "Thread C adquiriu o semáforo." << endl;
-    Alarm::delay(100000); // Delays to ensure it starts after B
+    for (int i = 0; i < 70; ++i) {
+        print_priorities("C inside");
+        Alarm::delay(5000);
+    }
     position.v();
-    cout << "Thread C liberou o semáforo." << endl;
     return 'C';
 }
