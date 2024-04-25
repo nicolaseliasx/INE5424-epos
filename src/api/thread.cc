@@ -277,8 +277,8 @@ void Thread::wakeup(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
-
-    // Uma thread vai ser reinserida na fila de prontos, preciso manter as prioridades que ja existem att
+    // Algo vai ser removido da fila waiting e reinserida na fila ready
+    // Chamo priority_all sempre que acontece um insert (resume) para colocar a thread na posição correta
     if(Criterion::dynamic)
         priority_all();
 
@@ -298,12 +298,11 @@ void Thread::wakeup_all(Queue * q)
 {
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
 
-    // TODO: Verificar todos os lugares que chamam wakeup_all
     assert(locked()); // locking handled by caller
-
+    // Algo vai ser removido da fila waiting e reinserida na fila ready
+    // Chamo priority_all sempre que acontece um insert (resume) para colocar a thread na posição correta
     if(Criterion::dynamic)
         priority_all();
-
 
     if(!q->empty()) {
         while(!q->empty()) {
