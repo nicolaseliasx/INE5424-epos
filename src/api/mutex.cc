@@ -56,9 +56,9 @@ void Mutex::unlock()
     } else {
         wakeup();
     }
-    Thread* _owner = _owners.head()->object();
-    _owner->priority_restore();
-    _owners.remove(_owner);
+    Thread* current = Thread::self();
+    current->priority_restore();
+    _owners.remove(current->link_element());
     end_atomic();
 }
 
