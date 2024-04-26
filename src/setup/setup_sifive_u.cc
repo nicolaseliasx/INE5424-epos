@@ -84,6 +84,8 @@ private:
 
     void say_hi();
 
+    void check_for_max_frequency();
+
     void setup_m2s();
     void setup_sys_pt();
     void setup_app_pt();
@@ -119,6 +121,10 @@ Setup::Setup()
     // Print basic facts about this EPOS instance
     say_hi();
 
+    // Check for max frequency for the interrupt handler bug
+    if (!Traits<Timer>::TURN_OFF_FREQ_CHECK) 
+        check_for_max_frequency();
+
     // Configure a flat memory model for the single task in the system
     setup_flat_paging();
 
@@ -132,6 +138,21 @@ Setup::Setup()
     call_next();
 }
 
+
+void Setup::check_for_max_frequency() {
+    db<Setup>(TRC) << "Setup::check_for_max_frequency()" << endl;
+    
+    if (!Traits<IC>::profiling) {
+        if (Traits<Timer>::FREQUENCY > Traits<Timer>::MAX_FREQUENCY) {
+            db<Setup>(ERR) << "Timer frequency has been set over the limit! Rebooting now\n" << endl;
+            Machine::reboot();
+        }
+
+        if (Traits<Timer>:: FREQUENCY > Traits<Timer>::MAX_FREQUENCY * 0.8) {
+            db<Setup>(WRN) << "Timer frequency is reaching the limit. Consider lowering it\n" << endl;
+        }
+    }
+}
 
 void Setup::setup_flat_paging()
 {

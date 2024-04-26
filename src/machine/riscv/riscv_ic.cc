@@ -10,8 +10,10 @@ extern "C" { static void print_context(bool push); }
 
 __BEGIN_SYS
 
+OStream bcout;
 PLIC::Reg32 PLIC::_claimed;
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
+int volatile IC::_interrupt_reentry;
 
 // Isso acontece pois o tempo entre interrupções é menor que o tempo necessário para executar o entry
 // A criação de uma função profiling deve ser feita usando uma variável (?) que seta caso
@@ -49,10 +51,23 @@ void IC::dispatch()
         db<IC, System>(TRC) << "IC::dispatch(i=" << id << ") [sp=" << CPU::sp() << "]" << endl;
 
     if(id == INT_SYS_TIMER) {
-        if(supervisor)
+        if(supervisor) {
+            if (Traits<IC>::profiling) {
+                if (IC::_interrupt_reentry) {
+                    db<IC, System>(ERR) << "PROFILING ENDS HERE. REENTRY DETECTED. FREQ: " << Traits<Timer>::FREQUENCY << "\n" << endl;
+                    bcout << "PROFILING ENDS HERE. REENTRY DETECTED. FREQ: " << Traits<Timer>::FREQUENCY << "\n" << endl;
+                    Machine::reboot();
+                }
+                IC::_interrupt_reentry = 1;
+            }
+
             CPU::ecall();   // we can't clear CPU::sipc(CPU::STI) in supervisor mode, so let's ecall int_m2s to do it for us
-        else
+        
+            if (Traits<IC>::profiling)
+                IC::_interrupt_reentry = 0;
+        } else {
             Timer::reset(); // MIP.MTI is a direct logic on (MTIME == MTIMECMP) and reseting the Timer seems to be the only way to clear it
+        }
     }
 
     _int_vector[id](id);

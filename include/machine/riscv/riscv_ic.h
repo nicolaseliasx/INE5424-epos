@@ -278,6 +278,7 @@ private:
 
 private:
     static Interrupt_Handler _int_vector[INTS];
+    static volatile int _interrupt_reentry;
 };
 
 __END_SYS
