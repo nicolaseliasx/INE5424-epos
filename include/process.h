@@ -88,8 +88,9 @@ public:
         _old_priority = this->priority();
         this->_link.rank(Criterion(max_priority));
     };
+
     void priority_restore() {
-        this->_link.rank(_old_priority);
+        this->_link.rank(Criterion(_old_priority));
     };
 
     int join();
