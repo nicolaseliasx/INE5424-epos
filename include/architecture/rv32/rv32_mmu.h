@@ -505,6 +505,9 @@ private:
     static Page_Directory * _master;
 };
 
+// This should get us the "No MMU" option already from the start,
+// so the "free()" methods used with the MMU class should be kept
+// even though they use "pages" or "pagination" -> chunks
 class MMU: public No_MMU {};
 
 __END_SYS

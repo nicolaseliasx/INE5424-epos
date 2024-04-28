@@ -21,7 +21,9 @@ public:
             return;
         }
 
-        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED && Traits<Machine>::supervisor)
+        // So this used even in machine mode because there is a MMU class called no-mmu? 
+        // Since we still need to free up the boot stack used, lets keep it here
+        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
             MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
 
         db<Init>(INF) << "INIT ends here!" << endl;
