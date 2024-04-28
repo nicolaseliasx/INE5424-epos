@@ -688,19 +688,18 @@ void _entry() // machine mode
     if(CPU::mhartid() == 0)                             // SiFive-U has 2 cores, but core 0 (an E51) does not feature an MMU, so we halt it and let core 1 (an U54) run in a single-core configuration
         CPU::halt();
 
+    // Since they will be reenabled in CPU::int_enable(); (if in machine mode)
     CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
 
-    // Depending if we will be using E as core 0
-    if (Traits<Machine>::supervisor)
-        CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
-    else
-        CPU::tp(CPU::mhartid());                            // Do we need to set tp? Are there other places that will use tp and we need it to set even if in machine mode?
+    // We will always use CPU 1, so we continue doing this even in machine mode
+    CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
 
-    // TODO: Does it need to be inside supervisor if? Where do we point sp if we dont have a memory map?
+    // The memory map is supposed to be 1:1 so we would expect this works
     CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP
 
     Machine::clear_bss();
 
+    // We dont want to delegate anything to supervisor mode when in machine mode
     if (Traits<Machine>::supervisor) {
         CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
         CPU::mideleg(CPU::SSI | CPU::STI | CPU::SEI);       // delegate supervisor interrupts to supervisor mode
@@ -713,20 +712,21 @@ void _entry() // machine mode
     // TODO: We dont need to stop MTIMECMP from triggering time interrupts before any call. Maybe set it to 0?
     CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
    
+    CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End, only if in supervisor mode. In machine mode, they will stay disabled)
+
    if (Traits<Machine>::supervisor) {
         CPU::mstatus(CPU::MPP_S | CPU::MPIE | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
-        CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End)
         CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
 
+        // We dont need to configure PMP when running on machine mode, since machine mode has full access to memory
         CPU::pmpcfg0(0b11111); 				                // configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
         CPU::pmpaddr0((1ULL << MMU::LA_BITS) - 1);          // comprising the whole memory space
 
         // MRET uses the mepc to hand over control to
-        // supervisor mode. But we don't need to do that (do we?)
-
+        // supervisor mode. But we don't need to do that.
         CPU::mepc(CPU::Reg(&_setup));                       // entry = _setup
-        CPU::mret();
-    }                                        // enter supervisor mode at setup (mepc) with interrupts enabled (mstatus.mpie = true)
+        CPU::mret();                                        // enter supervisor mode at setup (mepc) with interrupts enabled (mstatus.mpie = true)
+    }                                        
 }
 
 void _setup() // supervisor mode

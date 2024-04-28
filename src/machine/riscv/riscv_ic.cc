@@ -10,10 +10,10 @@ extern "C" { static void print_context(bool push); }
 
 __BEGIN_SYS
 
-OStream bcout;
 PLIC::Reg32 PLIC::_claimed;
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
 int volatile IC::_interrupt_reentry;
+int volatile IC::_reentry_detected;
 
 // Isso acontece pois o tempo entre interrupções é menor que o tempo necessário para executar o entry
 // A criação de uma função profiling deve ser feita usando uma variável (?) que seta caso
@@ -53,10 +53,8 @@ void IC::dispatch()
     if(id == INT_SYS_TIMER) {
         if(supervisor) {
             if (Traits<IC>::profiling) {
-                if (IC::_interrupt_reentry) {
-                    db<IC, System>(ERR) << "PROFILING ENDS HERE. REENTRY DETECTED. FREQ: " << Traits<Timer>::FREQUENCY << "\n" << endl;
-                    bcout << "PROFILING ENDS HERE. REENTRY DETECTED. FREQ: " << Traits<Timer>::FREQUENCY << "\n" << endl;
-                    Machine::reboot();
+                if (IC::_interrupt_reentry && !IC::_reentry_detected) {
+                    IC::_reentry_detected = 1;
                 }
                 IC::_interrupt_reentry = 1;
             }
@@ -92,6 +90,8 @@ void IC::exception(Interrupt_Id id)
     CPU::Log_Addr tval = CPU::tval();
     Thread * thread = Thread::self();
 
+    if (Traits<IC>::profiling && IC::_reentry_detected)
+        db<IC, System>(WRN) << " IC Reentry detected. This will cause problems in the execution of the program" << endl;
     db<IC,System>(WRN) << "IC::Exception(" << id << ") => {" << hex << "thread=" << thread << ",sp=" << sp << ",status=" << status << ",cause=" << cause << ",epc=" << epc << ",tval=" << tval << "}" << dec;
 
     switch(id) {

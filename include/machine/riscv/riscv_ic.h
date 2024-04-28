@@ -263,6 +263,18 @@ public:
 
     static void ipi_eoi(Interrupt_Id i) { msip(CPU::id()) = 0; }
 
+    static volatile int reentry_detected() { return _reentry_detected; }
+
+    static void test_for_reentry() {
+        if (Traits<IC>::profiling) {
+            if (reentry_detected())
+                db<IC, System>(ERR) << "Profiling has ended. Frequency tested (" << Traits<Timer>::FREQUENCY 
+                << "hz) is too high. Consider altering it in Traits" << endl;
+            else
+                db<IC, System>(WRN) << "This program ran as intended and no IC reentry has been detected" << endl;
+        }
+    }
+
 private:
     static void dispatch();
 
@@ -279,6 +291,7 @@ private:
 private:
     static Interrupt_Handler _int_vector[INTS];
     static volatile int _interrupt_reentry;
+    static volatile int _reentry_detected;
 };
 
 __END_SYS
