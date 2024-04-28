@@ -21,7 +21,7 @@ public:
             return;
         }
 
-        if(Memory_Map::BOOT_STACK != Memory_Map:: NOT_USED && Traits<Machine>::supervisor)
+        if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED && Traits<Machine>::supervisor)
             MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
 
         db<Init>(INF) << "INIT ends here!" << endl;
