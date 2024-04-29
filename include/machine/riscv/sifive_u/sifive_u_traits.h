@@ -21,7 +21,6 @@ public:
     static const unsigned long NOT_USED         = -1UL;
 
     // RISC-V mode for library
-    // TODO: Alterar para false e arrumar todos os lugares onde isso é usado
     // Desligar a MMU, abrir com ctrl + A + C para abrir o terminal do QEMU
     // Precisamos desligar a SATP -
     // Sem fazer o setup do paging é possível rodar o programa - como vamos desligar o SATP 
@@ -111,7 +110,7 @@ template <> struct Traits<Timer>: public Traits<Machine_Common>
     // Meaningful values for the timer frequency range from 100 to 10000 Hz. The
     // choice must respect the scheduler time-slice, i. e., it must be higher
     // than the scheduler invocation frequency.
-    static const long FREQUENCY = 1200; // Hz
+    static const long FREQUENCY = 1000; // Hz
     static const long MAX_FREQUENCY = 1350; //Hz here so it can be changed in traits. 
     static const long TURN_OFF_FREQ_CHECK = false; // turn off check for max frequency. Useful if you want to test without profiling for example
 };

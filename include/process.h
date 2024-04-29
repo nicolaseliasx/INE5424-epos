@@ -138,7 +138,6 @@ protected:
     Queue * _waiting;
     Thread * volatile _joining;
     Queue::Element _link;
-    bool _finished_execution; 
 
     Element _link_element;
 
