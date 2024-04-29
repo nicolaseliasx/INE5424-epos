@@ -683,13 +683,11 @@ using namespace EPOS::S;
 
 void _entry() // machine mode
 {
-    typedef IF<Traits<CPU>::WORD_SIZE == 32, SV32_MMU, SV39_MMU>::Result MMU; // architecture.h will use No_MMU if multitasking is disable, but we need the correct MMU for the Flat Memory Model.
+    typedef IF<Traits<CPU>::WORD_SIZE == 32, SV32_MMU, SV39_MMU>::Result MMU_RES; // architecture.h will use No_MMU if multitasking is disable, but we need the correct MMU for the Flat Memory Model.
+    typedef IF<Traits<Machine>::supervisor, MMU_RES, No_MMU>::Result MMU; 
 
     if(CPU::mhartid() == 0)                             // SiFive-U has 2 cores, but core 0 (an E51) does not feature an MMU, so we halt it and let core 1 (an U54) run in a single-core configuration
         CPU::halt();
-
-    // Since they will be reenabled in CPU::int_enable(); (if in machine mode)
-    CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
 
     // We will always use CPU 1, so we continue doing this even in machine mode
     CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
@@ -700,20 +698,19 @@ void _entry() // machine mode
     Machine::clear_bss();
 
     // We dont want to delegate anything to supervisor mode when in machine mode
+    // "Por padrão todas as traps, em qualquer modo, são tratadas em modo machine"
     if (Traits<Machine>::supervisor) {
         CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
         CPU::mideleg(CPU::SSI | CPU::STI | CPU::SEI);       // delegate supervisor interrupts to supervisor mode
         CPU::medeleg(0xf1ff);                               // delegate all exceptions to supervisor mode but ecalls
     }
 
-    // TODO: This will need to be on, but we don't know if it needs to be turned on here
+    // This will need to be on on either mode
     CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into supervisor mode
-    
+          
     // TODO: We dont need to stop MTIMECMP from triggering time interrupts before any call. Maybe set it to 0?
     CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
    
-    CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End, only if in supervisor mode. In machine mode, they will stay disabled)
-
    if (Traits<Machine>::supervisor) {
         CPU::mstatus(CPU::MPP_S | CPU::MPIE | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
         CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
@@ -726,7 +723,10 @@ void _entry() // machine mode
         // supervisor mode. But we don't need to do that.
         CPU::mepc(CPU::Reg(&_setup));                       // entry = _setup
         CPU::mret();                                        // enter supervisor mode at setup (mepc) with interrupts enabled (mstatus.mpie = true)
-    }                                        
+    } else {
+        db<Setup>(WRN) << "Im in setup mode!" << endl;
+        Setup setup;
+    }
 }
 
 void _setup() // supervisor mode

@@ -22,7 +22,7 @@ public:
 
     // RISC-V mode for library
     // Desligar a MMU, abrir com ctrl + A + C para abrir o terminal do QEMU
-    // Precisamos desligar a SATP -
+    // Precisamos desligar o registrador SATP -
     // Sem fazer o setup do paging é possível rodar o programa - como vamos desligar o SATP 
     // temos que desligar/desativar o setup das páginas 
 

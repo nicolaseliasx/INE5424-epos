@@ -40,6 +40,8 @@ public:
         if(Traits<Timer>::enabled)
             Timer::reset();
 
+        db<Init>(WRN) << "My mstatus is: " << CPU::status() << endl;
+
         first->_context->load();
     }
 };
