@@ -19,6 +19,7 @@ IC::Exception(��) => {thread=0x���,sp=0x��������      
 �����,cause=�,epc=0x��������    ����,tval=0x����������������}make[2]: Leaving directory '/home/bridge/Projects/so2/osdi_epos/img'
 
 // Looking at logs to see where the reentry starts to show... 1500hz for the timer
+// Is possbile to see this behavior in the ceiling test log as well
 
 riscv_cpu_do_interrupt: hart:1, async:0, cause:0000000000000009, epc:0x0000000080005c3a, tval:0x0000000000000000, desc=supervisor_ecall
 riscv_cpu_do_interrupt: hart:1, async:1, cause:0000000000000007, epc:0x00000000800051fa, tval:0x0000000000000000, desc=m_timer
@@ -46,7 +47,7 @@ riscv_cpu_do_interrupt: hart:1, async:0, cause:0000000000000005, epc:0x000000008
 riscv_cpu_do_interrupt: hart:1, async:1, cause:0000000000000007, epc:0x0000000080005dd6, tval:0x0000000000000000, desc=m_timer
 riscv_cpu_do_interrupt: hart:1, async:1, cause:0000000000000007, epc:0x00000000800049a4, tval:0x0000000000000000, desc=m_timer
 ...
-// ----------------------------------------- Testing for machine mode (gdb) -- running the same philosophers dinner test - expecting the test to run normally
+// ----------------------------------------- Testing for machine mode (gdb) -- running the same philosophers dinner test - expecting the test to run normally - and printing out mstatus
 
 Thread 2.1 hit Breakpoint 1, 0x0000000080004c82 in EPOS::S::IC::dispatch() ()
 (gdb) c

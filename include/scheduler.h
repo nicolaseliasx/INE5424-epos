@@ -80,7 +80,7 @@ public:
         static TSC::Time_Stamp _last_activation_time;                       // global time stamp of the last heuristic activation
     };
 
-    // Methos to collect statistics
+    // Methods to collect statistics
     void collect_thread_execution_time(TSC::Time_Stamp duration) {
         _statistics.thread_execution_time += duration;
     }
@@ -224,7 +224,6 @@ class LLF: public Real_Time_Scheduler_Common
 {
 public:
     static const bool timed = true;
-    // TODO: Posso usar esse flag aqui para flagear dynamic schedulers?? ESTOU USANDO
     static const bool dynamic = true;
     static const bool preemptive = true;
 

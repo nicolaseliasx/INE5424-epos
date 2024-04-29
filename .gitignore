@@ -3,7 +3,6 @@
 .vscode/
 
 # Log files
-*.log
 *.img
 *.o
 *.out
@@ -23,7 +22,7 @@ tools/eposcfg/
 tools/eposmkbi/
 
 # Image files
-img/
+#img/
 
 # We cant ignore folder of the executables inside app and test folders without ignoring the actual files we can edit
 
