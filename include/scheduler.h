@@ -21,7 +21,6 @@ class Scheduling_Criterion_Common
     friend class _SYS::Periodic_Thread;
     friend class _SYS::RT_Thread;
     friend class _SYS::Clerk<System>;         // for _statistics
-    friend class _SYS::Alarm;
 
 public:
     // Priorities
