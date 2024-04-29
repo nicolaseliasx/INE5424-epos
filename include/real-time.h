@@ -82,7 +82,6 @@ public:
     Periodic_Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
     : Thread(Thread::Configuration(SUSPENDED, (conf.criterion != NORMAL) ? conf.criterion : Criterion(conf.period), conf.stack_size), entry, an ...),
       _semaphore(0), _handler(&_semaphore, this), _alarm(conf.period, &_handler, conf.times) {
-        // TODO: Precisa disso mesmo? this->criterion()._capacity = conf.capacity;
         this->criterion()._capacity = conf.capacity;
         if((conf.state == READY) || (conf.state == RUNNING)) {
             _state = SUSPENDED;
