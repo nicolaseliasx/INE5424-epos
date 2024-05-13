@@ -10,10 +10,16 @@ void CPU::init()
 {
     db<Init, CPU>(TRC) << "CPU::init()" << endl;
 
-    if(Traits<MMU>::enabled)
-        MMU::init();
-    else
-        db<Init, MMU>(WRN) << "MMU is disabled!" << endl;
+    // Only one CPU needs to initialize MMU
+    if(CPU::id() == CPU::BSP) {
+        if(Traits<MMU>::enabled) {
+            MMU::init();
+        }
+        else
+            db<Init, MMU>(WRN) << "MMU is disabled!" << endl;
+    }
+
+    db<Init, CPU>(TRC) << "CPU::init() done!" << endl;
 
 #ifdef __TSC_H
     if(Traits<TSC>::enabled)

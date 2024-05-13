@@ -101,8 +101,10 @@ private:
     char * bi;
     System_Info * si;
     MMU mmu;
+    static volatile bool _paging_ready;
 };
 
+volatile bool Setup::_paging_ready = false;
 
 Setup::Setup()
 {
@@ -118,25 +120,40 @@ Setup::Setup()
     db<Setup>(TRC) << "Setup(si=" << reinterpret_cast<void *>(si) << ",sp=" << CPU::sp() << ")" << endl;
     db<Setup>(INF) << "Setup:si=" << *si << endl;
 
-    // Print basic facts about this EPOS instance
-    say_hi();
+    // Synchronize Start of Setup
+    CPU::smp_barrier();
 
-    // Check for max frequency for the interrupt handler bug
-    if (!Traits<Timer>::TURN_OFF_FREQ_CHECK) 
-        check_for_max_frequency();
+    if (CPU::id() == CPU::BSP) {
+        // Print basic facts about this EPOS instance
+        say_hi();
 
-    // We only need  to setup the interrupt handler and the MMU/paging if in supervisor mode
-    if (Traits<Machine>::supervisor) {
-        // Configure a flat memory model for the single task in the system
-        setup_flat_paging();
+        // Check for max frequency for the interrupt handler bug
+        if (!Traits<Timer>::TURN_OFF_FREQ_CHECK) 
+            check_for_max_frequency();
 
-        // Relocate the machine to supervisor interrupt forwarder
-        setup_m2s();
+        // We only need  to setup the interrupt handler and the MMU/paging if in supervisor mode
+        if (Traits<Machine>::supervisor) {
+            // Configure a flat memory model for the single task in the system
+            setup_flat_paging();
 
+            // Relocate the machine to supervisor interrupt forwarder
+            setup_m2s();
+        }
+
+        // Paging is done, tell others cores they can enable it
+        _paging_ready = true;
+    } else {
+        while(!_paging_ready);
         // Enable paging
-        enable_paging();
+        if (Traits<Machine>::supervisor) 
+            enable_paging();
     }
-    
+
+ 
+
+    // Synchronize End of Setup
+    CPU::smp_barrier();
+
     // SETUP ends here, so let's transfer control to the next stage (INIT or APP)
     call_next();
 }
@@ -683,50 +700,39 @@ using namespace EPOS::S;
 
 void _entry() // machine mode
 {
-    typedef IF<Traits<CPU>::WORD_SIZE == 32, SV32_MMU, SV39_MMU>::Result MMU_RES; // architecture.h will use No_MMU if multitasking is disable, but we need the correct MMU for the Flat Memory Model.
-    typedef IF<Traits<Machine>::supervisor, MMU_RES, No_MMU>::Result MMU; 
+    typedef IF<Traits<CPU>::WORD_SIZE == 32, SV32_MMU, SV39_MMU>::Result MMU; // architecture.h will use No_MMU if multitasking is disable, but we need the correct MMU for the Flat Memory Model.
 
     if(CPU::mhartid() == 0)                             // SiFive-U has 2 cores, but core 0 (an E51) does not feature an MMU, so we halt it and let core 1 (an U54) run in a single-core configuration
         CPU::halt();
 
-    // We will always use CPU 1, so we continue doing this even in machine mode
+    CPU::mstatusc(CPU::MIE);                            // disable interrupts (they will be reenabled at Init_End)
+
     CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
+    CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE * (CPU::id() + 1) - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP - Adjusted for multicores
+    
+    if(CPU::id() == CPU::BSP)
+        Machine::clear_bss();
 
-    // The memory map is supposed to be 1:1 so we would expect this works
-    CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP
-
-    Machine::clear_bss();
-
-    // We dont want to delegate anything to supervisor mode when in machine mode
-    // "Por padrão todas as traps, em qualquer modo, são tratadas em modo machine"
-    if (Traits<Machine>::supervisor) {
+    if(Traits<Machine>::supervisor) {
         CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)
         CPU::mideleg(CPU::SSI | CPU::STI | CPU::SEI);       // delegate supervisor interrupts to supervisor mode
         CPU::medeleg(0xf1ff);                               // delegate all exceptions to supervisor mode but ecalls
-    }
-
-    // This will need to be on on either mode
-    CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into supervisor mode
-          
-    // TODO: We dont need to stop MTIMECMP from triggering time interrupts before any call. Maybe set it to 0?
-    CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
-   
-   if (Traits<Machine>::supervisor) {
+        CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);           // enable interrupt generation by at machine level before going into supervisor mode
         CPU::mstatus(CPU::MPP_S | CPU::MPIE | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
+        CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End)
         CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
-
-        // We dont need to configure PMP when running on machine mode, since machine mode has full access to memory
-        CPU::pmpcfg0(0b11111); 				                // configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
-        CPU::pmpaddr0((1ULL << MMU::LA_BITS) - 1);          // comprising the whole memory space
-
-        // MRET uses the mepc to hand over control to
-        // supervisor mode. But we don't need to do that.
-        CPU::mepc(CPU::Reg(&_setup));                       // entry = _setup
-        CPU::mret();                                        // enter supervisor mode at setup (mepc) with interrupts enabled (mstatus.mpie = true)
     } else {
-        db<Setup>(WRN) << "Im in setup mode!" << endl;
-        Setup setup;
+        CPU::mie(0);                                        // disable interrupts at CLINT (each device will enable the necessary ones)
+        CPU::mstatus(CPU::MPP_M);                           // continue in machine mode at MRET
     }
+
+    CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
+
+    CPU::pmpcfg0(0b11111); 				// configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
+    CPU::pmpaddr0((1ULL << MMU::LA_BITS) - 1);          // comprising the whole memory space
+
+    CPU::mepc(CPU::Reg(&_setup));                       // entry = _setup
+    CPU::mret();                                        // enter supervisor mode at setup (mepc) with interrupts enabled (mstatus.mpie = true)
 }
 
 void _setup() // supervisor mode

@@ -30,7 +30,30 @@ public:
         free(addr, bytes);
     }
 
+    bool empty() {
+        db<Heaps>(TRC) << "Heap::empty()" << endl;
+        _lock.acquire();
+
+        bool tmp = Heap::empty();
+
+        _lock.release();
+
+        return tmp;
+    }
+
+    unsigned long size() {
+        db<Heaps>(TRC) << "Heap::size()" << endl;
+        _lock.acquire();
+
+        unsigned long tmp = Heap::size();
+
+        _lock.release();
+
+        return tmp;
+    }
+
     void * alloc(unsigned long bytes) {
+        _lock.acquire();
         db<Heaps>(TRC) << "Heap::alloc(this=" << this << ",bytes=" << bytes;
 
         if(!bytes)
@@ -59,11 +82,13 @@ public:
         *addr++ = bytes;
 
         db<Heaps>(TRC) << ") => " << reinterpret_cast<void *>(addr) << endl;
+        _lock.release();
 
         return addr;
     }
 
     void free(void * ptr, unsigned long bytes) {
+        _lock.acquire();
         db<Heaps>(TRC) << "Heap::free(this=" << this << ",ptr=" << ptr << ",bytes=" << bytes << ")" << endl;
 
         if(ptr && (bytes >= sizeof(Element))) {
@@ -71,6 +96,7 @@ public:
             Element * m1, * m2;
             insert_merging(e, &m1, &m2);
         }
+        _lock.release();
     }
 
     static void typed_free(void * ptr) {
@@ -88,6 +114,7 @@ public:
 
 private:
     void out_of_memory(unsigned long bytes);
+    static Simple_Spin _lock;
 };
 
 __END_UTIL

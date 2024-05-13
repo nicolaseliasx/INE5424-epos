@@ -29,6 +29,7 @@ protected:
 
     static const unsigned int QUANTUM = Traits<Thread>::QUANTUM;
     static const unsigned int STACK_SIZE = Traits<Application>::STACK_SIZE;
+    static const bool mp = Traits<Thread>::mp; // multi processing
 
     typedef CPU::Log_Addr Log_Addr;
     typedef CPU::Context Context;
@@ -98,7 +99,8 @@ public:
     void suspend();
     void resume();
 
-    static Thread * volatile self() { return _not_booting ? running() : reinterpret_cast<Thread * volatile>(CPU::id() + 1); }
+    static Thread * volatile self();   
+    // static unsigned int cpu_id() { return CPU::id() + 1; } // For identifier the cpu id in tests 
     static void yield();
     static void exit(int status = 0);
     
@@ -113,9 +115,21 @@ protected:
 
     static Thread * volatile running() { return _scheduler.chosen(); }
 
-    static void lock() { CPU::int_disable(); }
-    static void unlock() { CPU::int_enable(); }
-    static bool locked() { return CPU::int_disabled(); }
+    static void lock(Spin * lock = &_spin) {
+        CPU::int_disable();
+        if(mp)
+            lock->acquire();
+    }
+
+    static void unlock(Spin * lock = &_spin) {
+        if(mp)
+            lock->release();
+        // TODO: NOT BOOTING PQ?
+        if(_not_booting)
+            CPU::int_enable();
+    }
+
+    static volatile bool locked() { return (mp) ? _spin.taken() : CPU::int_disabled(); }
 
     static void sleep(Queue * q);
     static void wakeup(Queue * q);
@@ -145,6 +159,7 @@ protected:
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;
     static Scheduler<Thread> _scheduler;
+    static Spin _spin;
 
     int _old_priority;
 };
