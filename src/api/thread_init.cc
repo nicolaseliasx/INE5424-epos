@@ -22,8 +22,6 @@ void Thread::init()
         Main * main = reinterpret_cast<Main *>(__epos_app_entry);
 
         new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
-
-       
     }
    
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)

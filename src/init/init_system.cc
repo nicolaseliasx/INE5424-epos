@@ -21,44 +21,49 @@ public:
         CPU::smp_barrier();
 
         // Only the boot CPU runs INIT_SYSTEM fully
-        if(CPU::id() != 0) {
-            // Wait until the boot CPU has initialized the machine
-            CPU::smp_barrier();
-            Timer::init();
-            db<Init>(INF) << "Init:si=" << "Im not the BSP return" << endl;
-            return;
+        if(CPU::id() == CPU::BSP) {
+            db<Init>(INF) << "Init:si=" << *System::info() << endl;
+
+            db<Init>(INF) << "Initializing the architecture: " << endl;
+            CPU::init();
+
+            db<Init>(INF) << "Initializing system's heap: " << endl;
+            if(Traits<System>::multiheap) {
+                System::_heap_segment = new (&System::_preheap[0]) Segment(HEAP_SIZE, Segment::Flags::SYSD);
+                char * heap;
+                if(Memory_Map::SYS_HEAP == Traits<Machine>::NOT_USED)
+                    heap = Address_Space(MMU::current()).attach(System::_heap_segment);
+                else
+                    heap = Address_Space(MMU::current()).attach(System::_heap_segment, Memory_Map::SYS_HEAP);
+                if(!heap)
+                    db<Init>(ERR) << "Failed to initialize the system's heap!" << endl;
+                System::_heap = new (&System::_preheap[sizeof(Segment)]) Heap(heap, System::_heap_segment->size());
+            } else
+                System::_heap = new (&System::_preheap[0]) Heap(MMU::alloc(MMU::pages(HEAP_SIZE)), HEAP_SIZE);
+            
+            db<Init>(INF) << "Initializing the machine: " << endl;
+            Machine::init();
+            db<Init>(INF) << "machine init done!" << endl;
+
+            CPU::smp_barrier(); // signalizes "machine ready" to other CPUs
+
+        } else {
+            CPU::smp_barrier(); // waits until the bootstrap CPU signalizes "machine ready"
+
+            db<Init>(INF) << "Initializing the CPU: " << endl;
+            CPU::init();
+
+            db<Init>(INF) << "Initializing the machine: " << endl;
         }
-
-        // Only boostrap CPU runs init system
-
-    db<Init>(INF) << "Init:si=" << *System::info() << endl;
-
-        db<Init>(INF) << "Initializing the architecture: " << endl;
-        CPU::init();
-
-        db<Init>(INF) << "Initializing system's heap: " << endl;
-        if(Traits<System>::multiheap) {
-            System::_heap_segment = new (&System::_preheap[0]) Segment(HEAP_SIZE, Segment::Flags::SYSD);
-            char * heap;
-            if(Memory_Map::SYS_HEAP == Traits<Machine>::NOT_USED)
-                heap = Address_Space(MMU::current()).attach(System::_heap_segment);
-            else
-                heap = Address_Space(MMU::current()).attach(System::_heap_segment, Memory_Map::SYS_HEAP);
-            if(!heap)
-                db<Init>(ERR) << "Failed to initialize the system's heap!" << endl;
-            System::_heap = new (&System::_preheap[sizeof(Segment)]) Heap(heap, System::_heap_segment->size());
-        } else
-            System::_heap = new (&System::_preheap[0]) Heap(MMU::alloc(MMU::pages(HEAP_SIZE)), HEAP_SIZE);
         
-        db<Init>(INF) << "Initializing the machine: " << endl;
-        Machine::init();
-        db<Init>(INF) << "machine init done!" << endl;
-
-        // Boostraping CPU signaling other CPUs that the heap has been created
+        Timer::init();
+        
+        // Go to system init with all the timers created
         CPU::smp_barrier();
-        
+
         db<Init>(INF) << "Initializing system abstractions: " << endl;
         System::init();
+
 
         // Randomize the Random Numbers Generator's seed
         // Create a random seed for the random numbers generator 

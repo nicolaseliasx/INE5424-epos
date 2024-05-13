@@ -230,7 +230,6 @@ public:
     static Log_Addr fr() { Reg r; ASM("mv %0, a0" :  "=r"(r)); return r; }
     static void fr(Reg r) {       ASM("mv a0, %0" : : "r"(r) :); }
 
-    // Need to decrement one from the id so barriers can work normally (ignore the first core)
     static unsigned int id() { return tp(); }
     static unsigned int cores() { return Traits<Build>::CPUS; }
 

@@ -61,6 +61,7 @@ public:
     static const bool cpu_wide = false;
     static const bool system_wide = false;
     static const unsigned int QUEUES = 1;
+    static const unsigned int HEADS = Traits<System>::CPUS;
 
     // Runtime Statistics (for policies that don't use any; that's why its a union)
     union Statistics {
@@ -105,8 +106,10 @@ public:
     bool charge(bool end = false) { return true; }
     bool award(bool end = false) { return true; }
 
+
     volatile Statistics & statistics() { return _statistics; }
 
+    static unsigned int current_head() { return CPU::id(); }
     static void init() {}
 
 protected:

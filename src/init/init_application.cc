@@ -20,7 +20,6 @@ public:
         db<Init>(TRC) << "Init_Application()" << endl;
 
         // Only BSP runs init_application. So we synchronize everyone and let BSP do its thing
-        // CPU::smp_barrier();
         if(CPU::id() != CPU::BSP) {
             CPU::smp_barrier();
             return;
@@ -37,6 +36,8 @@ public:
             for(unsigned int frames = MMU::allocable(); frames; frames = MMU::allocable())
                 System::_heap->free(MMU::alloc(frames), frames * sizeof(MMU::Page));
         }
+
+        CPU::smp_barrier();
     }
 };
 

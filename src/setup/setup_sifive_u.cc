@@ -721,15 +721,17 @@ void _entry() // machine mode
         CPU::mstatus(CPU::MPP_S | CPU::MPIE | CPU::MXR);    // prepare jump into supervisor mode at MRET with interrupts enabled at machine level
         CPU::mstatusc(CPU::SIE);                            // disable interrupts (they will be reenabled at Init_End)
         CPU::sstatuss(CPU::SUM);                            // allows User Memory access in supervisor mode
+        CPU::pmpcfg0(0b11111); 				// configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
+        CPU::pmpaddr0((1ULL << MMU::LA_BITS) - 1);          // comprising the whole memory space
     } else {
         CPU::mie(0);                                        // disable interrupts at CLINT (each device will enable the necessary ones)
+        CPU::satp(0);
         CPU::mstatus(CPU::MPP_M);                           // continue in machine mode at MRET
     }
 
     CLINT::mtimecmp(-1ULL);                             // configure MTIMECMP so it won't trigger a timer interrupt before we can setup_m2s()
 
-    CPU::pmpcfg0(0b11111); 				// configure PMP region 0 as (L=unlocked [0], [00], A = NAPOT [11], X [1], W [1], R [1])
-    CPU::pmpaddr0((1ULL << MMU::LA_BITS) - 1);          // comprising the whole memory space
+    
 
     CPU::mepc(CPU::Reg(&_setup));                       // entry = _setup
     CPU::mret();                                        // enter supervisor mode at setup (mepc) with interrupts enabled (mstatus.mpie = true)
