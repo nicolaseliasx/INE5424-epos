@@ -287,7 +287,7 @@ template<typename T>
             ASM("amoadd.w %0, %2, (%1)" : "=&r"(old) : "r"(&value), "r"(neg_one) : "memory");
         return old;
     }
-
+    // revisar isso aqui ou voltar atras.
     template <typename T>
     static T cas(volatile T & value, T compare, T replacement) {
         register T old;
