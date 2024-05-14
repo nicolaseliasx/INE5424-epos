@@ -7,9 +7,9 @@ __BEGIN_SYS
 
 inline Real_Time_Scheduler_Common::Tick Real_Time_Scheduler_Common::elapsed() { return Alarm::elapsed(); }
 
-Real_Time_Scheduler_Common::Tick Real_Time_Scheduler_Common::ticks(Microsecond time) {
-    return Alarm::ticks(time);
-}
+Real_Time_Scheduler_Common::Tick Real_Time_Scheduler_Common::ticks(Microsecond time) { return Alarm::ticks(time);}
+
+Microsecond Real_Time_Scheduler_Common::time(Tick ticks) { return Alarm::time(ticks); }
 
 void Real_Time_Scheduler_Common::collect(Event event) {
     db<Thread>(TRC) << "RT::handle(this=" << this << ",e=";
@@ -73,15 +73,14 @@ void Real_Time_Scheduler_Common::collect(Event event) {
 template <typename ... Tn>
 FCFS::FCFS(int p, Tn & ... an): Priority((p == IDLE) ? IDLE : Alarm::elapsed()) {}
 
-EDF::EDF(const Microsecond & d, const Microsecond & p, const Microsecond & c, unsigned int): Real_Time_Scheduler_Common(ticks(d), ticks(d), p, c) {}
+EDF::EDF(Microsecond p, Microsecond d, Microsecond c): Real_Time_Scheduler_Common(int(elapsed() + ticks(d)), p, d, c) {}
 
 void EDF::update() {
     if(periodic())
         _priority = elapsed() + _deadline;
 }
 
-LLF::LLF(const Microsecond & deadline, const Microsecond & period, const Microsecond & capacity, unsigned int): 
-    Real_Time_Scheduler_Common((deadline - capacity), ticks(deadline),  ticks(period),  ticks(capacity)) {}
+LLF::LLF(Microsecond p, Microsecond d, Microsecond c): Real_Time_Scheduler_Common(int(elapsed() + ticks((d ? d : p) - c)), p, d, c) {}
 
 void LLF::update() {
     if(periodic())

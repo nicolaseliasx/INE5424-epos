@@ -35,11 +35,8 @@ public:
     // Não precisamos também inicializar o setup do paging e o enable paging, já que estamos
     // com a MMU desligada
 
-    // Deixar a CPU 0 (1 - cpu heterogenea) desligada sempre
-                                              // Run EPOS library in supervisor mode
-
     // CPU numbering
-    static const unsigned long CPU_OFFSET       = 1;             // We skip core zero, which is a E CPU without MMU
+    static const unsigned long CPU_OFFSET       = 1;                                            // We skip core zero, which is a E CPU without MMU
     static const unsigned int  BSP              = 0;                                            // Bootstrap/service processor (not counting heterogeneos processor)                         // We skip core zero, which is a E CPU without MMU
 
     // Clocks

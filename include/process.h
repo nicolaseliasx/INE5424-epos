@@ -45,7 +45,7 @@ public:
         FINISHING
     };
 
-     // Thread Scheduling Criterion
+    // Thread Scheduling Criterion
     typedef Traits<Thread>::Criterion Criterion;
     enum {
         CEILING = Criterion::CEILING,
@@ -58,8 +58,7 @@ public:
 
     // Thread Queue
     typedef Ordered_Queue<Thread, Criterion, Scheduler<Thread>::Element> Queue;
-    // Element in the Thread List
-    typedef List_Elements::Doubly_Linked<Thread> Element;
+
     // Thread Configuration
     struct Configuration {
         Configuration(const State & s = READY, const Criterion & c = NORMAL, unsigned int ss = STACK_SIZE)
@@ -97,14 +96,14 @@ public:
     void suspend();
     void resume();
 
-    static Thread * volatile self();   
+    static Thread * volatile self();
 
-    static unsigned int cpu_id() { return CPU::id() + 1; } // For identifier the cpu id in tests 
+    // Util for tracking where is cpu thread stays
+    static unsigned int cpu_id() { return CPU::id() + 1; }
 
     static void yield();
     static void exit(int status = 0);
-    
-    Element * link_element() { return &_link_element; }
+ 
     Criterion & criterion() { return const_cast<Criterion &>(_link.rank()); }
 
 protected:
@@ -155,21 +154,18 @@ protected:
     Thread * volatile _joining;
     Queue::Element _link;
     Criterion _natural_priority;
-    Element _link_element;
 
     static bool _not_booting;
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;
     static Scheduler<Thread> _scheduler;
     static Spin _spin;
-
-    int _old_priority;
 };
 
 
 template<typename ... Tn>
 inline Thread::Thread(int (* entry)(Tn ...), Tn ... an)
-: _state(READY), _waiting(0), _joining(0), _link(this, NORMAL), _link_element(this)
+: _state(READY), _waiting(0), _joining(0), _link(this, NORMAL)
 {
     constructor_prologue(STACK_SIZE);
     _context = CPU::init_stack(0, _stack + STACK_SIZE, &__exit, entry, an ...);
@@ -178,7 +174,7 @@ inline Thread::Thread(int (* entry)(Tn ...), Tn ... an)
 
 template<typename ... Tn>
 inline Thread::Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
-: _state(conf.state), _waiting(0), _joining(0), _link(this, conf.criterion), _link_element(this)
+: _state(conf.state), _waiting(0), _joining(0), _link(this, conf.criterion)
 {
     constructor_prologue(conf.stack_size);
     _context = CPU::init_stack(0, _stack + conf.stack_size, &__exit, entry, an ...);

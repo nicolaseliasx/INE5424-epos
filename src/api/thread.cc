@@ -247,7 +247,7 @@ void Thread::sleep(Queue * q)
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
     // alguns sleep() bugam se não estiverem com lock()
     // pode ser mais de um da oprobklea m sei la
-    lock(); // locking handled by caller
+    assert(locked()); // locking handled by caller
 
     Thread * prev = running();
     _scheduler.suspend(prev);
@@ -256,8 +256,6 @@ void Thread::sleep(Queue * q)
     q->insert(&prev->_link);
 
     Thread * next = _scheduler.chosen();
-
-    unlock();
 
     dispatch(prev, next);
 }
@@ -412,7 +410,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             _spin.release();
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
         if(mp)
-            lock();// garante que as operações n serao interrompidas por expections
+            _spin.acquire();// garante que as operações n serao interrompidas por expections
     }
 }
  // Alguns syncronizers precisam de lock() para usar o CPU::int_disable(); e funcinar corretamente
@@ -444,8 +442,7 @@ int Thread::idle()
         }
     }
     
-    // Some machines will need a little time to actually reboot
-    for(;;);
+    CPU::halt();
 
     return 0;
 }

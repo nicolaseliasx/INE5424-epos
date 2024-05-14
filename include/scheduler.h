@@ -83,7 +83,7 @@ public:
     static const bool cpu_wide = false;
     static const bool system_wide = false;
     static const unsigned int QUEUES = 1;
-    static const unsigned int HEADS = Traits<System>::CPUS;
+    static const unsigned int HEADS = Traits<System>::CPUS; // For multihead lists
 
     // Runtime Statistics (for policies that don't use any; that's why its a union)
     union Statistics {
@@ -108,7 +108,6 @@ protected:
     Scheduling_Criterion_Common(): _statistics() {}
 
 public:
-    
     void period(const Microsecond & p) {}
 
     unsigned int queue() const { return 0; }
@@ -125,12 +124,10 @@ public:
 
     volatile Statistics & statistics() { return _statistics; }
 
+    // For multihead list identifiers
     static unsigned int current_head() { return CPU::id(); }
-    static void init() {}
 
-    Microsecond period() { return 0;}
-    Microsecond deadline() { return 0; }
-    Microsecond capacity() { return 0; }
+    static void init() {}
 
 protected:
     Statistics _statistics;
@@ -184,29 +181,33 @@ public:
 class Real_Time_Scheduler_Common: public Priority
 {
 protected:
-    Real_Time_Scheduler_Common(int p): Priority(p), _deadline(0), _period(0), _capacity(0) {} // aperiodic
+    Real_Time_Scheduler_Common(int i): Priority(i), _period(0), _deadline(0), _capacity(0) {} // aperiodic
     Real_Time_Scheduler_Common(int i, const Microsecond & d, const Microsecond & p, const Microsecond & c)
-    : Priority(i), _deadline(d), _period(p), _capacity(c) {}
-protected:
-    static Tick elapsed();
-    Tick ticks(Microsecond time);
+    : Priority(i), _period(ticks(p)), _deadline(ticks(d ? d : p)), _capacity(ticks(c)) {}
 
 public:
-    const Microsecond period() { return _period; }
-    void period(const Microsecond & p) { _period = p; }
-
     bool periodic() { return (_priority >= PERIODIC) && (_priority <= SPORADIC); }
 
     void collect(Event event);
 
-public:
-    Microsecond _deadline;
-    Microsecond _period;
-    Microsecond _capacity;
+    Microsecond period() { return time(_period); }
+    Microsecond deadline() { return time(_deadline); }
+    Microsecond capacity() { return time(_capacity); }
+
+    volatile Statistics & statistics() { return _statistics; }
+
+protected:
+    static Tick elapsed();
+    Tick ticks(Microsecond time);
+    Microsecond time(Tick ticks);
+
+    Tick _period;
+    Tick _deadline;
+    Tick _capacity;
 };
 
 // Rate Monotonic
-class RM:public Real_Time_Scheduler_Common
+class RM: public Real_Time_Scheduler_Common
 {
 public:
     static const bool timed = false;
@@ -216,7 +217,7 @@ public:
 public:
     RM(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
     RM(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY)
-    : Real_Time_Scheduler_Common(p ? p : d, d, p, c) {}
+    : Real_Time_Scheduler_Common(int(ticks(p)), p, d, c) {}
 };
 
 // Deadline Monotonic
@@ -230,7 +231,7 @@ public:
 public:
     DM(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
     DM(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY)
-    : Real_Time_Scheduler_Common(d, d, p, c) {}
+    : Real_Time_Scheduler_Common(int(ticks(d ? d : p)), p, d, c) {}
 };
 
 // Earliest Deadline First
@@ -243,7 +244,7 @@ public:
 
 public:
     EDF(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
-    EDF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
+    EDF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN);
 
     void update();
 };
@@ -258,10 +259,9 @@ public:
 
 public:
     LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
-    LLF(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY);
+    LLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN);
 
     void update();
-    void update_capacity();
 };
 
 __END_SYS

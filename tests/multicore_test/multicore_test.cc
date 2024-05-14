@@ -1,158 +1,117 @@
-// EPOS Periodic Thread Component Test Program
+// EPOS Scheduler Test Program
 
+#include <machine/display.h>
 #include <time.h>
-#include <real-time.h>
-#include <utility/geometry.h>
+#include <synchronizer.h>
+#include <process.h>
 
 using namespace EPOS;
 
-const unsigned int iterations = 100;
-const Milisecond period_a = 100;
-const Milisecond period_b = 80;
-const Milisecond period_c = 60;
-const Milisecond wcet_a = 50;
-const Milisecond wcet_b = 20;
-const Milisecond wcet_c = 10;
+const int iterations = 10;
 
-int func_a();
-int func_b();
-int func_c();
+Mutex table;
+
+Thread * phil[5];
+Semaphore * chopstick[5];
 
 OStream cout;
-Chronometer chrono;
 
-Periodic_Thread * thread_a;
-Periodic_Thread * thread_b;
-Periodic_Thread * thread_c;
-
-Point<long, 2> p, p1(2131231, 123123), p2(2, 13123), p3(12312, 123123);
-
-unsigned long base_loop_count;
-
-void callibrate()
-{
-    chrono.start();
-    Microsecond end = chrono.read() + Microsecond(1000000UL);
-
-    base_loop_count = 0;
-
-    while(chrono.read() < end) {
-        p = p + Point<long, 2>::trilaterate(p1, 123123, p2, 123123, p3, 123123);
-        base_loop_count++;
-    }
-
-    chrono.stop();
-
-    base_loop_count /= 1000;
-}
-
-inline void exec(char c, Milisecond time = 0)
-{
-    Milisecond elapsed = chrono.read() / 1000;
-    Milisecond end = elapsed + time;
-
-    cout << "\n" << elapsed << " " << c
-         << " [A={i=" << thread_a->priority() << ",d=" << thread_a->criterion()._deadline / Alarm::frequency() << ",c=" << thread_a->statistics().job_utilization << "}"
-         <<  " B={i=" << thread_b->priority() << ",d=" << thread_b->criterion()._deadline / Alarm::frequency() << ",c=" << thread_b->statistics().job_utilization << "}"
-         <<  " C={i=" << thread_c->priority() << ",d=" << thread_c->criterion()._deadline / Alarm::frequency() << ",c=" << thread_c->statistics().job_utilization << "}]";
-
-    while(elapsed < end) {
-        for(unsigned long i = 0; i < time; i++)
-            for(unsigned long j = 0; j < base_loop_count; j++) {
-                p = p + Point<long, 2>::trilaterate(p1, 123123, p2, 123123, p3, 123123);
-        }
-        elapsed = chrono.read() / 1000;
-        cout << "\n" << elapsed << " " << c
-             << " [A={i=" << thread_a->priority() << ",d=" << thread_a->criterion()._deadline / Alarm::frequency() << ",c=" << thread_a->statistics().job_utilization << "}"
-             <<  " B={i=" << thread_b->priority() << ",d=" << thread_b->criterion()._deadline / Alarm::frequency() << ",c=" << thread_b->statistics().job_utilization << "}"
-             <<  " C={i=" << thread_c->priority() << ",d=" << thread_c->criterion()._deadline / Alarm::frequency() << ",c=" << thread_c->statistics().job_utilization << "}]";
-    }
-}
-
+int philosopher(int n, int l, int c);
 
 int main()
 {
-    cout << "Periodic Thread Component Test" << endl;
+    table.lock();
+    Display::clear();
+    Display::position(0, 0);
+    cout << "The Philosopher's Dinner Multicore!!:" << endl;
+    cout << "CPUS= "<< CPU::cores() << endl;
 
-    cout << "\nThis test consists in creating three periodic threads as follows:" << endl;
-    cout << "- Every " << period_a << "ms, thread A executes \"a\" for " << wcet_a << "ms;" << endl;
-    cout << "- Every " << period_b << "ms, thread B executes \"b\" for " << wcet_b << "ms;" << endl;
-    cout << "- Every " << period_c << "ms, thread C executes \"c\" for " << wcet_c << "ms;" << endl;
+    for(int i = 0; i < 5; i++)
+        chopstick[i] = new Semaphore;
 
-    cout << "\nCallibrating the duration of the base execution loop: ";
-    callibrate();
-    cout << base_loop_count << " iterations per ms!" << endl;
+    phil[0] = new Thread(&philosopher, 0,  5, 28);
+    phil[1] = new Thread(&philosopher, 1, 10, 44);
+    phil[2] = new Thread(&philosopher, 2, 16, 42);
+    phil[3] = new Thread(&philosopher, 3, 16, 16);
+    phil[4] = new Thread(&philosopher, 4, 10, 18);
 
-    cout << "\nThreads will now be created and I'll wait for them to finish..." << endl;
+    cout << "Philosophers are alive and hungry!" << endl;
 
-    // p,d,c,act,t
-    thread_a = new Periodic_Thread(RTConf(period_a * 1000, 0, wcet_a * 1000, 0, iterations), &func_a);
-    thread_b = new Periodic_Thread(RTConf(period_b * 1000, 0, wcet_b * 1000, 0, iterations), &func_b);
-    thread_c = new Periodic_Thread(RTConf(period_c * 1000, 0, wcet_c * 1000, 0, iterations), &func_c);
+    Display::position(7, 44);
+    cout << '/';
+    Display::position(13, 44);
+    cout << '\\';
+    Display::position(16, 35);
+    cout << '|';
+    Display::position(13, 27);
+    cout << '/';
+    Display::position(7, 27);
+    cout << '\\';
+    Display::position(19, 0);
 
-    exec('M');
+    cout << "The dinner is served ..." << endl;
+    table.unlock();
 
-    chrono.reset();
-    chrono.start();
+    for(int i = 0; i < 5; i++) {
+        int ret = phil[i]->join();
+        table.lock();
+        Display::position(20 + i, 0);
+        cout << "Philosopher " << i << " ate " << ret << " times " << endl;
+        table.unlock();
+    }
 
-    int status_a = thread_a->join();
-    int status_b = thread_b->join();
-    int status_c = thread_c->join();
+    for(int i = 0; i < 5; i++)
+        delete chopstick[i];
+    for(int i = 0; i < 5; i++)
+        delete phil[i];
 
-    chrono.stop();
-
-    exec('M');
-
-    cout << "\n... done!" << endl;
-    cout << "\n\nThread A exited with status \"" << char(status_a)
-         << "\", thread B exited with status \"" << char(status_b)
-         << "\" and thread C exited with status \"" << char(status_c) << "." << endl;
-
-    cout << "\nThe estimated time to run the test was "
-         << "A " << period_a* iterations << " B " << period_b* iterations << " C " << period_c * iterations
-         << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
-
-    cout << "I'm also done, bye!" << endl;
+    cout << "The end!" << endl;
 
     return 0;
 }
 
-
-int func_a()
+int philosopher(int n, int l, int c)
 {
-    exec('A');
+    int first = (n < 4) ? n : 0;
+    int second = (n < 4) ? n + 1 : 4;
 
-    do {
-        exec('a', wcet_a);
-    } while (Periodic_Thread::wait_next());
+    for(int i = iterations; i > 0; i--) {
 
-    exec('A');
+        table.lock();
+        Display::position(l, c);
+        cout << "thinking CPU " << CPU::id();  // Mostra o ID da CPU ao lado de "thinking"
+        table.unlock();
 
-    return 'A';
-}
+        Delay thinking(1000000);
 
-int func_b()
-{
-    exec('B');
+        table.lock();
+        Display::position(l, c);
+        cout << " hungry CPU " << CPU::id();  // Mostra o ID da CPU ao lado de "hungry"
+        table.unlock();
 
-    do {
-        exec('b', wcet_b);
-    } while (Periodic_Thread::wait_next());
+        chopstick[first]->p();   // pega o primeiro hashi
+        chopstick[second]->p();  // pega o segundo hashi
 
-    exec('B');
+        table.lock();
+        Display::position(l, c);
+        cout << " eating CPU " << CPU::id();  // Mostra o ID da CPU ao lado de "eating"
+        table.unlock();
 
-    return 'B';
-}
+        Delay eating(500000);
 
-int func_c()
-{
-    exec('C');
+        table.lock();
+        Display::position(l, c);
+        cout << " sate CPU " << CPU::id();  // Mostra o ID da CPU ao lado de "sate"
+        table.unlock();
 
-    do {
-        exec('c', wcet_c);
-    } while (Periodic_Thread::wait_next());
+        chopstick[first]->v();   // libera o primeiro hashi
+        chopstick[second]->v();  // libera o segundo hashi
+    }
 
-    exec('C');
+    table.lock();
+    Display::position(l, c);
+    cout << " done CPU " << CPU::id();  // Mostra o ID da CPU ao lado de "done"
+    table.unlock();
 
-    return 'C';
+    return iterations;
 }

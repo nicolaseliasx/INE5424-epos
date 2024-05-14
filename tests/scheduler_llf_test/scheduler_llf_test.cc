@@ -52,9 +52,9 @@ inline void exec(char c, Milisecond time = 0)
     Milisecond end = elapsed + time;
 
     cout << "\n" << elapsed << " " << c
-         << " [A={i=" << thread_a->priority() << ",d=" << thread_a->criterion()._deadline / Alarm::frequency() << ",c=" << thread_a->statistics().job_utilization << "}"
-         <<  " B={i=" << thread_b->priority() << ",d=" << thread_b->criterion()._deadline / Alarm::frequency() << ",c=" << thread_b->statistics().job_utilization << "}"
-         <<  " C={i=" << thread_c->priority() << ",d=" << thread_c->criterion()._deadline / Alarm::frequency() << ",c=" << thread_c->statistics().job_utilization << "}]";
+         << " [A={i=" << thread_a->priority() << ",d=" << thread_a->criterion().deadline() / Alarm::frequency() << ",c=" << thread_a->statistics().job_utilization << "}"
+         <<  " B={i=" << thread_b->priority() << ",d=" << thread_b->criterion().deadline() / Alarm::frequency() << ",c=" << thread_b->statistics().job_utilization << "}"
+         <<  " C={i=" << thread_c->priority() << ",d=" << thread_c->criterion().deadline() / Alarm::frequency() << ",c=" << thread_c->statistics().job_utilization << "}]";
 
     while(elapsed < end) {
         for(unsigned long i = 0; i < time; i++)
@@ -63,9 +63,9 @@ inline void exec(char c, Milisecond time = 0)
         }
         elapsed = chrono.read() / 1000;
         cout << "\n" << elapsed << " " << c
-             << " [A={i=" << thread_a->priority() << ",d=" << thread_a->criterion()._deadline / Alarm::frequency() << ",c=" << thread_a->statistics().job_utilization << "}"
-             <<  " B={i=" << thread_b->priority() << ",d=" << thread_b->criterion()._deadline / Alarm::frequency() << ",c=" << thread_b->statistics().job_utilization << "}"
-             <<  " C={i=" << thread_c->priority() << ",d=" << thread_c->criterion()._deadline / Alarm::frequency() << ",c=" << thread_c->statistics().job_utilization << "}]";
+             << " [A={i=" << thread_a->priority() << ",d=" << thread_a->criterion().deadline() / Alarm::frequency() << ",c=" << thread_a->statistics().job_utilization << "}"
+             <<  " B={i=" << thread_b->priority() << ",d=" << thread_b->criterion().deadline() / Alarm::frequency() << ",c=" << thread_b->statistics().job_utilization << "}"
+             <<  " C={i=" << thread_c->priority() << ",d=" << thread_c->criterion().deadline() / Alarm::frequency() << ",c=" << thread_c->statistics().job_utilization << "}]";
     }
 }
 

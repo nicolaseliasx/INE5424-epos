@@ -61,6 +61,7 @@ private:
 
     static Microsecond timer_period() { return 1000000 / frequency(); }
     static Tick ticks(const Microsecond & time) { return (time + timer_period() / 2) / timer_period(); }
+    static Microsecond time(Tick ticks) { return Microsecond(ticks) * timer_period(); }
 
     static void lock() { Thread::lock(); }
     static void unlock() { Thread::unlock(); }
