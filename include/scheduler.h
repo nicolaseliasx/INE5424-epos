@@ -22,15 +22,17 @@ class Scheduling_Criterion_Common
     friend class _SYS::RT_Thread;
     friend class _SYS::Clerk<System>;         // for _statistics
 
+protected:
+    typedef Timer_Common::Tick Tick;
 public:
     // Priorities
     enum : int {
-        ISR    = -1000,
-        MAIN   = -1,
-        HIGH   = 0,
-        NORMAL = (unsigned(1) << (sizeof(int) * 8 - 2)) - 1,
-        LOW    = (unsigned(1) << (sizeof(int) * 8 - 1)) - 2,
-        IDLE   = (unsigned(1) << (sizeof(int) * 8 - 1)) - 1
+        CEILING = -1000,
+        MAIN    = -1,
+        HIGH    = 0,
+        NORMAL  = (unsigned(1) << (sizeof(int) * 8 - 3)) - 1,
+        LOW     = (unsigned(1) << (sizeof(int) * 8 - 2)) - 1,
+        IDLE    = (unsigned(1) << (sizeof(int) * 8 - 1)) - 1
     };
 
     // Constructor helpers
@@ -46,6 +48,26 @@ public:
         PERIODIC    = HIGH,
         APERIODIC   = NORMAL,
         SPORADIC    = NORMAL
+    };
+
+    // Policy events
+    typedef int Event;
+    enum {
+        CREATE          = 1 << 0,
+        FINISH          = 1 << 1,
+        ENTER           = 1 << 2,
+        LEAVE           = 1 << 3,
+        JOB_RELEASE     = 1 << 4,
+        JOB_FINISH      = 1 << 5
+    };
+
+    // Policy operations
+    typedef int Operation;
+    enum {
+        COLLECT         = 1 << 16,
+        CHARGE          = 1 << 17,
+        AWARD           = 1 << 18,
+        UPDATE          = 1 << 19
     };
 
     // Policy traits
@@ -65,35 +87,28 @@ public:
 
     // Runtime Statistics (for policies that don't use any; that's why its a union)
     union Statistics {
-        // Thread Execution Time
-        TSC::Time_Stamp thread_execution_time;  // accumulated thread execution time
-        TSC::Time_Stamp last_thread_dispatch;   // time stamp of last dispatch
+        // Thread related statistics
+        Tick thread_creation;                   // tick in which the thread was created
+        Tick thread_destruction;                // tick in which the thread was destroyed
+        Tick thread_execution_time;             // accumulated execution time (in ticks)
+        Tick thread_last_dispatch;              // tick in which the thread was last dispatched to the CPU
+        Tick thread_last_preemption;            // tick in which the thread left the CPU by the last time
 
-        // Deadline Miss count - Used By Clerk
-        Alarm * alarm_times;                    // pointer to RT_Thread private alarm (for monitoring purposes)
-        unsigned int finished_jobs;             // number of finished jobs given by the number of times alarm->p() was called for this thread
-        unsigned int missed_deadlines;          // number of missed deadlines given by the number of finished jobs (finished_jobs) minus the number of dispatched jobs (alarm_times->times)
-
-        // CPU Execution Time (capture ts)
-        static TSC::Time_Stamp _cpu_time[Traits<Build>::CPUS];              // accumulated CPU time in the current hyperperiod for each CPU
-        static TSC::Time_Stamp _last_dispatch_time[Traits<Build>::CPUS];    // time Stamp of last dispatch in each CPU
-        static TSC::Time_Stamp _last_activation_time;                       // global time stamp of the last heuristic activation
+        // Job related statistics
+        bool job_released;
+        Tick job_release;                       // tick in which the last job of a periodic thread was made ready for execution
+        Tick job_start;                         // tick in which the last job of a periodic thread started (different from "thread_last_dispatch" since jobs can be preempted)
+        Tick job_finish;                        // tick in which the last job of a periodic thread finished (i.e. called _alarm->p() at wait_netxt(); different from "thread_last_preemption" since jobs can be preempted)
+        Tick job_utilization;                   // accumulated execution time (in ticks)
+        unsigned int jobs_released;             // number of jobs of a thread that were released so far (i.e. the number of times _alarm->v() was called by the Alarm::handler())
+        unsigned int jobs_finished;             // number of jobs of a thread that finished execution so far (i.e. the number of times alarm->p() was called at wait_next())
     };
-
-    // Methods to collect statistics
-    void collect_thread_execution_time(TSC::Time_Stamp duration) {
-        _statistics.thread_execution_time += duration;
-    }
-
-    void collect_last_thread_dispatch(TSC::Time_Stamp timestamp) {
-        _statistics.last_thread_dispatch = timestamp;
-    }
 
 protected:
     Scheduling_Criterion_Common(): _statistics() {}
 
 public:
-    const Microsecond period() { return 0;}
+    
     void period(const Microsecond & p) {}
 
     unsigned int queue() const { return 0; }
@@ -102,15 +117,20 @@ public:
     bool update() { return false; }
     bool update_capacity() { return false; }
 
-    bool collect(bool end = false) { return false; }
+    bool collect(Event event) { return false; }
     bool charge(bool end = false) { return true; }
     bool award(bool end = false) { return true; }
 
+    bool periodic() { return false; }
 
     volatile Statistics & statistics() { return _statistics; }
 
     static unsigned int current_head() { return CPU::id(); }
     static void init() {}
+
+    Microsecond period() { return 0;}
+    Microsecond deadline() { return 0; }
+    Microsecond capacity() { return 0; }
 
 protected:
     Statistics _statistics;
@@ -167,10 +187,17 @@ protected:
     Real_Time_Scheduler_Common(int p): Priority(p), _deadline(0), _period(0), _capacity(0) {} // aperiodic
     Real_Time_Scheduler_Common(int i, const Microsecond & d, const Microsecond & p, const Microsecond & c)
     : Priority(i), _deadline(d), _period(p), _capacity(c) {}
+protected:
+    static Tick elapsed();
+    Tick ticks(Microsecond time);
 
 public:
     const Microsecond period() { return _period; }
     void period(const Microsecond & p) { _period = p; }
+
+    bool periodic() { return (_priority >= PERIODIC) && (_priority <= SPORADIC); }
+
+    void collect(Event event);
 
 public:
     Microsecond _deadline;

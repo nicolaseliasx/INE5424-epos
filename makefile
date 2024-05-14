@@ -168,6 +168,28 @@ build_ceiling_test:
 run_ceiling_test_only:
 		$(MAKE) APPLICATION=ceiling_test run1
 
+run_multicore_test: link_multicore_test build_multicore_test run_multicore_test_only
+
+link_multicore_test:
+		$(LINK) $(TST)/multicore_test $(APP);
+
+build_multicore_test:
+		$(MAKE) APPLICATION=multicore_test clean1 all1
+
+run_multicore_test_only:
+		$(MAKE) APPLICATION=multicore_test run1
+
+run_inheritance_test: link_inheritance_test build_inheritance_test run_inheritance_test_only
+
+link_inheritance_test:
+		$(LINK) $(TST)/inheritance_test $(APP);
+
+build_inheritance_test:
+		$(MAKE) APPLICATION=inheritance_test clean1 all1
+
+run_inheritance_test_only:
+		$(MAKE) APPLICATION=inheritance_test run1
+
 .PHONY: prebuild_$(APPLICATION) posbuild_$(APPLICATION) prerun_$(APPLICATION)
 prebuild_$(APPLICATION):
 		@echo -n "Building $(APPLICATION) ..."

@@ -5,28 +5,87 @@
 
 __BEGIN_SYS
 
+inline Real_Time_Scheduler_Common::Tick Real_Time_Scheduler_Common::elapsed() { return Alarm::elapsed(); }
+
+Real_Time_Scheduler_Common::Tick Real_Time_Scheduler_Common::ticks(Microsecond time) {
+    return Alarm::ticks(time);
+}
+
+void Real_Time_Scheduler_Common::collect(Event event) {
+    db<Thread>(TRC) << "RT::handle(this=" << this << ",e=";
+    if(event & CREATE) {
+        db<Thread>(TRC) << "CREATE";
+
+        _statistics.thread_creation = elapsed();
+        _statistics.job_released = false;
+    }
+    if(event & FINISH) {
+        db<Thread>(TRC) << "FINISH";
+
+        _statistics.thread_destruction = elapsed();
+    }
+    if(event & ENTER) {
+        db<Thread>(TRC) << "ENTER";
+
+        _statistics.thread_last_dispatch = elapsed();
+    }
+    if(event & LEAVE) {
+        Tick cpu_time = elapsed() - _statistics.thread_last_dispatch;
+
+        db<Thread>(TRC) << "LEAVE";
+
+        _statistics.thread_last_preemption = elapsed();
+        _statistics.thread_execution_time += cpu_time;
+        _statistics.job_utilization += cpu_time;
+    }
+    if(periodic() && (event & JOB_RELEASE)) {
+        db<Thread>(TRC) << "RELEASE";
+
+        _statistics.job_released = true;
+        _statistics.job_release = elapsed();
+        _statistics.job_start = 0;
+        _statistics.job_utilization = 0;
+        _statistics.jobs_released++;
+    }
+    if(periodic() && (event & JOB_FINISH)) {
+        db<Thread>(TRC) << "WAIT";
+
+        _statistics.job_released = false;
+        _statistics.job_finish = elapsed();
+        _statistics.jobs_finished++;
+    }
+    if(event & COLLECT) {
+        db<Thread>(TRC) << "|COLLECT";
+    }
+    if(periodic() && (event & CHARGE)) {
+        db<Thread>(TRC) << "|CHARGE";
+    }
+    if(periodic() && (event & AWARD)) {
+        db<Thread>(TRC) << "|AWARD";
+    }
+    if(periodic() && (event & UPDATE)) {
+        db<Thread>(TRC) << "|UPDATE";
+    }
+    db<Thread>(TRC) << ") => {i=" << _priority << ",p=" << _period << ",d=" << _deadline << ",c=" << _capacity << "}" << endl;
+}
+
 // The following Scheduling Criteria depend on Alarm, which is not available at scheduler.h
 template <typename ... Tn>
 FCFS::FCFS(int p, Tn & ... an): Priority((p == IDLE) ? IDLE : Alarm::elapsed()) {}
 
-EDF::EDF(const Microsecond & d, const Microsecond & p, const Microsecond & c, unsigned int): Real_Time_Scheduler_Common(Alarm::ticks(d), Alarm::ticks(d), p, c) {}
+EDF::EDF(const Microsecond & d, const Microsecond & p, const Microsecond & c, unsigned int): Real_Time_Scheduler_Common(ticks(d), ticks(d), p, c) {}
 
 void EDF::update() {
-    if((_priority >= PERIODIC) && (_priority < APERIODIC))
-        _priority = Alarm::elapsed() + _deadline;
+    if(periodic())
+        _priority = elapsed() + _deadline;
 }
 
 LLF::LLF(const Microsecond & deadline, const Microsecond & period, const Microsecond & capacity, unsigned int): 
-    Real_Time_Scheduler_Common((deadline - capacity), Alarm::ticks(deadline),  Alarm::ticks(period),  Alarm::ticks(capacity)) {}
+    Real_Time_Scheduler_Common((deadline - capacity), ticks(deadline),  ticks(period),  ticks(capacity)) {}
 
 void LLF::update() {
-    _capacity = _capacity - _statistics.thread_execution_time;
-    if((_priority >= PERIODIC) && (_priority < APERIODIC))
-        _priority = (_deadline - Alarm::elapsed() * 1000) - _capacity;
-}
-
-void LLF::update_capacity() {
-    _capacity = _capacity -  Alarm::ticks(_statistics.thread_execution_time);
+    if(periodic())
+        _priority = elapsed() + _deadline - _capacity + _statistics.thread_execution_time;
 }
 
 // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.

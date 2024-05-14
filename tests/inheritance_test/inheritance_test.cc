@@ -56,8 +56,7 @@ int func_a() {
     // A ideia eh colocar simuladamente a thread A em uma prioridade extremamente alta e alinhado com os delays
     // temos uma inversao de prioridade acontecendo onde a thread B e C de prioridades mais baixar entram no semaphore
     // de duas posicoes antes da thread A na linha de baixo com a maior prioridade possivel enquanto ambas as threads
-    // imprimem suas prioridades podendo visualizar o celing acontecendo as threads B e C de dentro do semaphore ficarao com 
-    // suas prioridades = -1000
+    // imprimem suas prioridades podendo visualizar a heranca de prioridade acontecendo
     thread_a->priority(-50000);
     position.p();
     print_priorities("A acquired the semaphore");

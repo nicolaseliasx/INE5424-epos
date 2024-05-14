@@ -26,6 +26,7 @@ class Thread
 protected:
     static const bool preemptive = Traits<Thread>::Criterion::preemptive;
     static const bool reboot = Traits<System>::reboot;
+    static const int priority_inversion_protocol = Traits<Thread>::priority_inversion_protocol;
 
     static const unsigned int QUANTUM = Traits<Thread>::QUANTUM;
     static const unsigned int STACK_SIZE = Traits<Application>::STACK_SIZE;
@@ -44,10 +45,10 @@ public:
         FINISHING
     };
 
-    // Thread Scheduling Criterion
+     // Thread Scheduling Criterion
     typedef Traits<Thread>::Criterion Criterion;
     enum {
-        ISR     = Criterion::ISR,
+        CEILING = Criterion::CEILING,
         HIGH    = Criterion::HIGH,
         NORMAL  = Criterion::NORMAL,
         LOW     = Criterion::LOW,
@@ -83,16 +84,13 @@ public:
     const volatile Criterion & priority() const { return _link.rank(); }
     void priority(const Criterion & p);
 
-    static void priority_all();
-
-    void priority_elevate(int max_priority) {
-        _old_priority = this->priority();
-        this->_link.rank(Criterion(max_priority));
-    };
-
-    void priority_restore() {
-        this->_link.rank(Criterion(_old_priority));
-    };
+    static void update_all_priorities() {
+        for(Queue::Iterator i = _scheduler.begin(); i != _scheduler.end(); ++i)
+            if(i->object()->criterion() != IDLE) {
+                i->object()->criterion().update();
+                i->object()->criterion().collect(Criterion::UPDATE);
+            }
+    }
 
     int join();
     void pass();
@@ -100,17 +98,19 @@ public:
     void resume();
 
     static Thread * volatile self();   
-    // static unsigned int cpu_id() { return CPU::id() + 1; } // For identifier the cpu id in tests 
+
+    static unsigned int cpu_id() { return CPU::id() + 1; } // For identifier the cpu id in tests 
+
     static void yield();
     static void exit(int status = 0);
     
     Element * link_element() { return &_link_element; }
+    Criterion & criterion() { return const_cast<Criterion &>(_link.rank()); }
 
 protected:
     void constructor_prologue(unsigned int stack_size);
     void constructor_epilogue(Log_Addr entry, unsigned int stack_size);
 
-    Criterion & criterion() { return const_cast<Criterion &>(_link.rank()); }
     Queue::Element * link() { return &_link; }
 
     static Thread * volatile running() { return _scheduler.chosen(); }
@@ -124,8 +124,7 @@ protected:
     static void unlock(Spin * lock = &_spin) {
         if(mp)
             lock->release();
-        // TODO: NOT BOOTING PQ?
-        if(_not_booting)
+        if(_not_booting) // serve pra identificar se o sistema já foi inicializado
             CPU::int_enable();
     }
 
@@ -134,6 +133,9 @@ protected:
     static void sleep(Queue * q);
     static void wakeup(Queue * q);
     static void wakeup_all(Queue * q);
+
+    static void prioritize(Queue * queue);
+    static void deprioritize(Queue * queue);
 
     static void reschedule();
     static void time_slicer(IC::Interrupt_Id interrupt);
@@ -152,7 +154,7 @@ protected:
     Queue * _waiting;
     Thread * volatile _joining;
     Queue::Element _link;
-
+    Criterion _natural_priority;
     Element _link_element;
 
     static bool _not_booting;

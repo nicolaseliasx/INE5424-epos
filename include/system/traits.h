@@ -206,6 +206,9 @@ struct Traits_Tokens
 
     // Default aspects
     typedef ALIST<> ASPECTS;
+
+    // Priority inversion protocols
+    enum {CEILING, INHERITANCE};
 };
 
 // Interrupt souces names (for all machines; overridden at Traits<IC>; 0 => not used)

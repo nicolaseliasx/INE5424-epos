@@ -40,6 +40,8 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
     if((_state != READY) && (_state != RUNNING))
         _scheduler.suspend(this);
 
+    criterion().collect(Criterion::CREATE);
+
     if(preemptive && (_state == READY) && (_link.rank() != IDLE))
         reschedule();
 
@@ -110,23 +112,6 @@ void Thread::priority(const Criterion & c)
         reschedule();
 
     unlock();
-}
-
-void Thread::priority_all() {
-    // Alguns lugares que chamam essa função ja estão com o lock
-    if(!locked()) lock();
-
-    db<Thread>(TRC) << "Thread::priority_all()" << endl;
-
-    for (auto it = _scheduler.begin(); it != _scheduler.end(); ++it) {
-        auto aux = it->object();
-        if (aux->state() != RUNNING && aux->_link.rank() != IDLE && aux->_link.rank() != MAIN) {
-            aux->criterion().update();
-            aux->_link.rank(aux->criterion());
-        }
-    }
-
-    if(!locked()) unlock();
 }
 
 
@@ -239,6 +224,7 @@ void Thread::exit(int status)
     _scheduler.remove(prev);
     prev->_state = FINISHING;
     *reinterpret_cast<int *>(prev->_stack) = status;
+    prev->criterion().collect(Criterion::FINISH);
 
     _thread_count--;
 
@@ -282,11 +268,6 @@ void Thread::wakeup(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
-    // Algo vai ser removido da fila waiting e reinserida na fila ready
-    // Chamo priority_all sempre que acontece um insert (resume) para colocar a thread na posição correta
-    if(Criterion::dynamic)
-        priority_all();
-
     if(!q->empty()) {
         Thread * t = q->remove()->object();
         t->_state = READY;
@@ -304,10 +285,6 @@ void Thread::wakeup_all(Queue * q)
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
 
     assert(locked()); // locking handled by caller
-    // Algo vai ser removido da fila waiting e reinserida na fila ready
-    // Chamo priority_all sempre que acontece um insert (resume) para colocar a thread na posição correta
-    if(Criterion::dynamic)
-        priority_all();
 
     if(!q->empty()) {
         while(!q->empty()) {
@@ -319,6 +296,62 @@ void Thread::wakeup_all(Queue * q)
 
         if(preemptive)
             reschedule();
+    }
+}
+
+void Thread::prioritize(Queue * q)
+{
+    assert(locked()); // locking handled by caller
+    
+    if(priority_inversion_protocol == Traits<Build>::NONE)
+        return;
+
+    db<Thread>(TRC) << "Thread::prioritize(q=" << q << ") [running=" << running() << "]" << endl;
+
+    Thread * r = running();
+    for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
+        if(i->object()->priority() > r->priority()) {
+            r->_natural_priority = r->criterion();
+            Criterion c = (priority_inversion_protocol == Traits<Build>::CEILING) ? CEILING : r->criterion();
+            if(r->_state == READY) {
+                _scheduler.suspend(r);
+                r->_link.rank(c);
+                _scheduler.resume(r);
+            } else if(r->state() == WAITING) {
+                r->_waiting->remove(&r->_link);
+                r->_link.rank(c);
+                r->_waiting->insert(&r->_link);
+            } else
+                r->_link.rank(c);
+        }
+    }
+}
+
+
+void Thread::deprioritize(Queue * q)
+{
+    assert(locked()); // locking handled by caller
+
+    if(priority_inversion_protocol == Traits<Build>::NONE)
+        return;
+
+    db<Thread>(TRC) << "Thread::deprioritize(q=" << q << ") [running=" << running() << "]" << endl;
+
+    Thread * r = running();
+    Criterion c = r->_natural_priority;
+    for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
+        if(i->object()->priority() != c) {
+            if(r->_state == READY) {
+                _scheduler.suspend(r);
+                r->_link.rank(c);
+                _scheduler.resume(r);
+            } else if(r->state() == WAITING) {
+                r->_waiting->remove(&r->_link);
+                r->_link.rank(c);
+                r->_waiting->insert(&r->_link);
+            } else
+                r->_link.rank(c);
+        }
     }
 }
 
@@ -348,14 +381,16 @@ void Thread::time_slicer(IC::Interrupt_Id i)
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
-    if(charge) {
-        if (Criterion::dynamic)
-            prev->criterion().update_capacity();
-        if(Criterion::timed)
-            _timer->restart();
+    if(charge && Criterion::timed) {
+        _timer->restart();
     }
 
     if(prev != next) {
+        if(Criterion::dynamic) {
+            prev->criterion().collect(Criterion::CHARGE | Criterion::LEAVE);
+            update_all_priorities();
+            next->criterion().collect(Criterion::AWARD  | Criterion::ENTER);
+        }
         if(prev->_state == RUNNING)
             prev->_state = READY;
         next->_state = RUNNING;
@@ -366,13 +401,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             tmp.save();
             db<Thread>(INF) << "Thread::dispatch:prev={" << prev << ",ctx=" << tmp << "}" << endl;
         }
-        db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl;
-
-        // Collect statistics
-        TSC::Time_Stamp now = TSC::time_stamp();
-        prev->criterion().collect_thread_execution_time(now - prev->criterion().statistics().last_thread_dispatch);
-        next->criterion().collect_last_thread_dispatch(now);
- 
+        db<Thread>(INF) << "Thread::dispatch:next={" << next << ",ctx=" << *next->_context << "}" << endl; 
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and
@@ -383,7 +412,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             _spin.release();
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
         if(mp)
-            lock();
+            lock();// garante que as operações n serao interrompidas por expections
     }
 }
  // Alguns syncronizers precisam de lock() para usar o CPU::int_disable(); e funcinar corretamente

@@ -23,9 +23,9 @@ void Condition::wait()
 {
     db<Synchronizer>(TRC) << "Condition::wait(this=" << this << ")" << endl;
 
-    begin_atomic();
+    lock_for_acquiring();
     sleep();
-    end_atomic();
+    unlock_for_acquiring();
 }
 
 
@@ -33,9 +33,9 @@ void Condition::signal()
 {
     db<Synchronizer>(TRC) << "Condition::signal(this=" << this << ")" << endl;
 
-    begin_atomic();
+    lock_for_releasing();
     wakeup();
-    end_atomic();
+    unlock_for_releasing();
 }
 
 
@@ -43,9 +43,9 @@ void Condition::broadcast()
 {
     db<Synchronizer>(TRC) << "Condition::broadcast(this=" << this << ")" << endl;
 
-    begin_atomic();
+    lock_for_releasing();
     wakeup_all();
-    end_atomic();
+    unlock_for_releasing();
 }
 
 // This is an alternative implementation, which does impose ordering
