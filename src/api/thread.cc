@@ -410,7 +410,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             _spin.release();
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
         if(mp)
-            _spin.acquire();// garante que as operações n serao interrompidas por expections
+            _spin.acquire();
     }
 }
  // Alguns syncronizers precisam de lock() para usar o CPU::int_disable(); e funcinar corretamente

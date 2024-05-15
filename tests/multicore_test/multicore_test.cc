@@ -104,7 +104,7 @@ int main() {
          << "\", thread G with \"" << char(status_g)
          << "\", and thread H with \"" << char(status_h) << "." << endl;
     
-    cout << "\nThe average execution time with 1 core is approximately 643.8 ms. For this test with 4 cores, the measured execution time is " << chrono.read() / 1000 << " ms!" << endl;
+    cout << "\nThe average execution time with 1 core is approximately 643.8 ms. For this test with " << CPU::cores() << " cores, the measured execution time is " << chrono.read() / 1000 << " ms!" << endl;
     
     cout << "I'm also done, bye!" << endl;
 
