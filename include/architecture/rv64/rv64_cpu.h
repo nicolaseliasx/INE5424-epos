@@ -254,52 +254,39 @@ public:
     static void switch_context(Context ** o, Context * n) __attribute__ ((naked));
 
     template<typename T>
-    static T tsl(volatile T & lock) {
+    static T tsl(volatile T &lock) {
         register T old;
         register T one = 1;
-        if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   sc.d    t3, %2, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&lock), "r"(one) : "t3", "cc", "memory");
+        if (sizeof(T) == sizeof(Reg64))
+            ASM("amoadd.d %0, %2, (%1)" : "=r"(old) : "r"(&lock), "r"(one) : "memory");
         else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   sc.w    t3, %2, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&lock), "r"(one) : "t3", "cc", "memory");
+            ASM("amoadd.w %0, %2, (%1)" : "=r"(old) : "r"(&lock), "r"(one) : "memory");
         return old;
     }
 
     template<typename T>
-    static T finc(volatile T & value) {
+    static T finc(volatile T &value) {
         register T old;
-        if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   addi    %0, %0, 1       \n"
-                "   sc.d    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
+        if (sizeof(T) == sizeof(Reg64))
+            ASM("amoadd.d %0, %2, (%1)" : "=r"(old) : "r"(&value), "r"(1) : "memory");
         else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   addi    %0, %0, 1       \n"
-                "   sc.w    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
-        return old - 1;
+            ASM("amoadd.w %0, %2, (%1)" : "=r"(old) : "r"(&value), "r"(1) : "memory");
+        return old;
     }
 
     template<typename T>
-    static T fdec(volatile T & value) {
+    static T fdec(volatile T &value) {
         register T old;
-        if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   addi    %0, %0, -1      \n"
-                "   sc.d    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
+        if (sizeof(T) == sizeof(Reg64))
+            ASM("amoadd.d %0, %2, (%1)" : "=r"(old) : "r"(&value), "r"(-1) : "memory");
         else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   addi    %0, %0, -1      \n"
-                "   sc.w    t3, %0, (%1)    \n"
-                "   bnez    t3, 1b          \n" : "=&r"(old) : "r"(&value) : "t3", "cc", "memory");
-        return old + 1;
+            ASM("amoadd.w %0, %2, (%1)" : "=r"(old) : "r"(&value), "r"(-1) : "memory");
+        return old;
     }
 
+    // Compare and Swap com uso de amoswap não parece fazer muito sentido, 
+    // pois amoswap já faz a troca e retorna o valor antigo e so queremos comparar antes de trocar
+    // o que gera uma complexidade desnecessaria resolvemos manter como ja estava.
     template <typename T>
     static T cas(volatile T & value, T compare, T replacement) {
         register T old;

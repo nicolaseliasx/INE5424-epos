@@ -7,10 +7,12 @@
 using namespace EPOS;
 
 const unsigned int iterations = 10;
-const unsigned int period_a = 100;
+// Periods (smaller period indicates higher priority under rate-monotonic scheduling)
+const unsigned int period_a = 100;  // Highest priority
 const unsigned int period_b = 150;
 const unsigned int period_c = 200;
 
+// Worst-case execution times (WCET)
 const unsigned int wcet_a = 50;
 const unsigned int wcet_b = 30;
 const unsigned int wcet_c = 20;
@@ -58,7 +60,6 @@ int func_a() {
     // de duas posicoes antes da thread A na linha de baixo com a maior prioridade possivel enquanto ambas as threads
     // imprimem suas prioridades podendo visualizar o celing acontecendo as threads B e C de dentro do semaphore ficarao com 
     // suas prioridades = -1000
-    thread_a->priority(-50000);
     position.p();
     print_priorities("A acquired the semaphore");
     position.v();

@@ -6,8 +6,8 @@
 
 using namespace EPOS;
 
-const unsigned int iterations = 10;
-const unsigned int period_a = 100;
+// Periods (smaller period indicates higher priority under rate-monotonic scheduling)
+const unsigned int period_a = 100;  // Highest priority
 const unsigned int period_b = 150;
 const unsigned int period_c = 200;
 
@@ -57,7 +57,6 @@ int func_a() {
     // temos uma inversao de prioridade acontecendo onde a thread B e C de prioridades mais baixar entram no semaphore
     // de duas posicoes antes da thread A na linha de baixo com a maior prioridade possivel enquanto ambas as threads
     // imprimem suas prioridades podendo visualizar a heranca de prioridade acontecendo
-    thread_a->priority(-50000);
     position.p();
     print_priorities("A acquired the semaphore");
     position.v();

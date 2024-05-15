@@ -119,7 +119,7 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const int priority_inversion_protocol = CEILING;
     static const int mp = Traits<System>::multicore;
 
-    typedef LLF Criterion;
+    typedef RM Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 

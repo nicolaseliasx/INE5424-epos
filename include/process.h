@@ -98,9 +98,6 @@ public:
 
     static Thread * volatile self();
 
-    // Util for tracking where is cpu thread stays
-    static unsigned int cpu_id() { return CPU::id() + 1; }
-
     static void yield();
     static void exit(int status = 0);
  
