@@ -14,9 +14,13 @@ void Timer::init()
 
     if (CPU::id() == CPU::BSP)
         IC::int_vector(IC::INT_SYS_TIMER, int_handler);
+    IC::int_vector(IC::INT_RESCHEDULER, int_handler);
 
-    reset();
-    IC::enable(IC::INT_SYS_TIMER);
+    reset(); // Resets each mtimecmp timer
+    
+    if (CPU::id() == CPU::BSP) 
+        IC::enable(IC::INT_SYS_TIMER);  // Enabling int_sys_timer is enabling timer interrupts
+    IC::enable(IC::INT_RESCHEDULER);    // Enabling int_rescheduler is enabling software interrupts
 }
 
 __END_SYS

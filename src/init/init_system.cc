@@ -29,15 +29,7 @@ public:
 
             db<Init>(INF) << "Initializing system's heap: " << endl;
             if(Traits<System>::multiheap) {
-                System::_heap_segment = new (&System::_preheap[0]) Segment(HEAP_SIZE, Segment::Flags::SYSD);
-                char * heap;
-                if(Memory_Map::SYS_HEAP == Traits<Machine>::NOT_USED)
-                    heap = Address_Space(MMU::current()).attach(System::_heap_segment);
-                else
-                    heap = Address_Space(MMU::current()).attach(System::_heap_segment, Memory_Map::SYS_HEAP);
-                if(!heap)
-                    db<Init>(ERR) << "Failed to initialize the system's heap!" << endl;
-                System::_heap = new (&System::_preheap[sizeof(Segment)]) Heap(heap, System::_heap_segment->size());
+                // Dont need to keep multiheap implementation here
             } else
                 System::_heap = new (&System::_preheap[0]) Heap(MMU::alloc(MMU::pages(HEAP_SIZE)), HEAP_SIZE);
             
@@ -52,18 +44,15 @@ public:
 
             db<Init>(INF) << "Initializing the CPU: " << endl;
             CPU::init();
+            Timer::init(); // We need to initialize timer interrupts for all CPUs - This is also executed inside Machine::init
 
             db<Init>(INF) << "Initializing the machine: " << endl;
         }
         
-        Timer::init();
-        
-        // Go to system init with all the timers created
-        CPU::smp_barrier();
+        CPU::smp_barrier(); // Go to system init with all the timers created
 
         db<Init>(INF) << "Initializing system abstractions: " << endl;
         System::init();
-
 
         // Randomize the Random Numbers Generator's seed
         // Create a random seed for the random numbers generator 

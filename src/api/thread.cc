@@ -94,6 +94,20 @@ Thread::~Thread()
     delete _stack;
 }
 
+// Precisamos decidir qual vai ser a estratégia para avisar aos outros cores quando uma tarefa tem a sua prioridade reavaliada.
+// Temos que mandar IC::ipi's pros outros cores. Nessa linha, iremos mandar apenas para aquele core que teve uma thread sua alterada
+// Ou para todos os cores e cada core "se vira" com essa informação?
+
+// Priority needs to be multicore! Needs to use IPI to signal other cores that the scheduler list has been updated
+
+// It should use IC::ipi to send signals to other processors
+// We need to determine what are our strategy
+
+    // static void ipi(unsigned int cpu, Interrupt_Id i) {
+    //     db<IC>(TRC) << "IC::ipi(cpu=" << cpu << ",int=" << i << ")" << endl;
+    //     assert(i < INTS);
+    //     msip(cpu) = 1;
+    // }
 
 void Thread::priority(const Criterion & c)
 {
@@ -297,6 +311,7 @@ void Thread::wakeup_all(Queue * q)
     }
 }
 
+// Same thing as priority. This needs to be multicore aware using signaling
 void Thread::prioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
@@ -325,7 +340,7 @@ void Thread::prioritize(Queue * q)
     }
 }
 
-
+// This guy needs to be multicore aware as well!
 void Thread::deprioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
