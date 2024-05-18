@@ -258,15 +258,9 @@ public:
         register T old;
         register T one = 1;
         if (sizeof(T) == sizeof(Reg64)) {
-            ASM("   amoswap.d  %0, %2, (%1)  \n"
-                "   beqz       %0, 1f        \n"
-                "   amoswap.d  %0, %0, (%1)  \n"
-                "1:                          \n" : "=&r"(old) : "r"(&lock), "r"(one) : "memory");
+            ASM("amoswap.d  %0, %2, (%1)  \n" : "=&r"(old) : "r"(&lock), "r"(one) : "memory");
         } else {
-            ASM("   amoswap.w  %0, %2, (%1)  \n"
-                "   beqz       %0, 1f        \n"
-                "   amoswap.w  %0, %0, (%1)  \n"
-                "1:                          \n" : "=&r"(old) : "r"(&lock), "r"(one) : "memory");
+            ASM("amoswap.w  %0, %2, (%1)  \n" : "=&r"(old) : "r"(&lock), "r"(one) : "memory");
         }
         return old;
     }
