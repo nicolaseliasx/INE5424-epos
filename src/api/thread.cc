@@ -320,14 +320,12 @@ void Thread::prioritize(Queue * q)
     if(priority_inversion_protocol == Traits<Build>::NA) {
         return;
     }
-    // ESSE METODO TA ELEVANDO APENAS A PRIORIDADE DE UMA SO SENDO QUE TEM DUAS NO SEMAPHORE
+
     db<Thread>(TRC) << "Thread::prioritize(q=" << q << ") [running=" << running() << "]" << endl;
     Thread * run = running();
     for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
         auto owner = i->object();
-        cout << "owner = " << owner << endl;
         if(owner->priority() > run->priority()) {
-            cout << "Thread::prioritize INVERSION DETECTED"<< endl;
             owner->_natural_priority = owner->criterion();
             Criterion c = (priority_inversion_protocol == Traits<Build>::CEILING) ? CEILING : run->criterion();
             if(owner->_state == READY) {
@@ -353,22 +351,22 @@ void Thread::deprioritize(Queue * q)
         return;
 
     db<Thread>(TRC) << "Thread::deprioritize(q=" << q << ") [running=" << running() << "]" << endl;
-    Thread * r = running();
-    Criterion c = r->_natural_priority;
-    // for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
-    //     if(i->object()->priority() != c) {
-    if(r->_state == READY) {
-        _scheduler.suspend(r);
-        r->_link.rank(c);
-        _scheduler.resume(r);
-    } else if(r->state() == WAITING) {
-        r->_waiting->remove(&r->_link);
-        r->_link.rank(c);
-        r->_waiting->insert(&r->_link);
-    } else
-        r->_link.rank(c);
-    //     }
-    // }
+    for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
+        auto owner = i->object();
+        Criterion c = owner->_natural_priority;
+        if(owner->_natural_priority != -9000) {
+            if(owner->_state == READY) {
+                _scheduler.suspend(owner);
+                owner->_link.rank(c);
+                _scheduler.resume(owner);
+            } else if(owner->state() == WAITING) {
+                owner->_waiting->remove(&owner->_link);
+                owner->_link.rank(c);
+                owner->_waiting->insert(&owner->_link);
+            } else
+                owner->_link.rank(c);
+        }
+    }
 }
 
 

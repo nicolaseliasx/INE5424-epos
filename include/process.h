@@ -150,7 +150,7 @@ protected:
     Queue * _waiting;
     Thread * volatile _joining;
     Queue::Element _link;
-    Criterion _natural_priority;
+    Criterion _natural_priority = -9000;
 
     static bool _not_booting;
     static volatile unsigned int _thread_count;

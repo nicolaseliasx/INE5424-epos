@@ -37,7 +37,7 @@ protected:
     // Thread operations
     void lock_for_acquiring() { Thread::lock(); Thread::prioritize(&_owners); }
     void unlock_for_acquiring() { _owners.insert(new (SYSTEM) Queue::Element(Thread::running())); Thread::unlock(); }
-    void lock_for_releasing() { Thread::lock(); Queue::Element * e = _owners.remove(); if(e) delete e; Thread::deprioritize(&_owners); Thread::deprioritize(&_waiting); }
+    void lock_for_releasing() { Thread::lock(); Thread::deprioritize(&_owners); Thread::deprioritize(&_waiting); Queue::Element * e = _owners.remove(); if(e) delete e;  }
     void unlock_for_releasing() { Thread::unlock(); }
 
     void sleep() { Thread::sleep(&_waiting); }
