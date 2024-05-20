@@ -40,6 +40,9 @@ int main() {
     thread_b->join();
     thread_a->join();
 
+    cout << "\nYou need to analyze the priority for Thread B after the message A trying to acquire the semaphore" << endl;
+    cout << "you will see thread B ceiling aplicated equals -1000" << endl;
+
     cout << "\nEND TEST" << endl;
 
     return 0;

@@ -6,11 +6,13 @@
 
 using namespace EPOS;
 
+const unsigned int iterations = 10;
 // Periods (smaller period indicates higher priority under rate-monotonic scheduling)
-const unsigned int period_a = 100;  // Highest priority
+const unsigned int period_a = 60;  // Highest priority
 const unsigned int period_b = 150;
 const unsigned int period_c = 200;
 
+// Worst-case execution times (WCET)
 const unsigned int wcet_a = 50;
 const unsigned int wcet_b = 30;
 const unsigned int wcet_c = 20;
@@ -28,7 +30,7 @@ Periodic_Thread *thread_b;
 Periodic_Thread *thread_c;
 
 int main() {
-    cout << "Start inheritance protocol test" << endl;
+    cout << "Start ceiling protocol test" << endl;
 
     thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, wcet_a * 1000, 0, iterations), &func_a);
     thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, wcet_b * 1000, 0, iterations), &func_b);
@@ -37,6 +39,9 @@ int main() {
     thread_c->join();
     thread_b->join();
     thread_a->join();
+
+    cout << "\nYou need to analyze the priority for Thread B after the message A trying to acquire the semaphore" << endl;
+    cout << "you will see thread B inherit the priority of A" << endl;
 
     cout << "\nEND TEST" << endl;
 
@@ -56,7 +61,8 @@ int func_a() {
     // A ideia eh colocar simuladamente a thread A em uma prioridade extremamente alta e alinhado com os delays
     // temos uma inversao de prioridade acontecendo onde a thread B e C de prioridades mais baixar entram no semaphore
     // de duas posicoes antes da thread A na linha de baixo com a maior prioridade possivel enquanto ambas as threads
-    // imprimem suas prioridades podendo visualizar a heranca de prioridade acontecendo
+    // imprimem suas prioridades podendo visualizar o celing acontecendo as threads B e C de dentro do semaphore ficarao com 
+    // suas prioridades sendo herdadas
     position.p();
     print_priorities("A acquired the semaphore");
     position.v();

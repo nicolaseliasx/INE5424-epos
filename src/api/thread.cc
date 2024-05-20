@@ -8,8 +8,6 @@ extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1
 
 __BEGIN_SYS
 
-OStream cout;
-
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
@@ -317,7 +315,7 @@ void Thread::wakeup_all(Queue * q)
 void Thread::prioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
-    if(priority_inversion_protocol == Traits<Build>::NA) {
+    if(priority_inversion_protocol == Traits<Build>::NA || q->empty()) {
         return;
     }
 
@@ -347,7 +345,7 @@ void Thread::deprioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
 
-    if(priority_inversion_protocol == Traits<Build>::NA)
+    if(priority_inversion_protocol == Traits<Build>::NA || q->empty())
         return;
 
     db<Thread>(TRC) << "Thread::deprioritize(q=" << q << ") [running=" << running() << "]" << endl;

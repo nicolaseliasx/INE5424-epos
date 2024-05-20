@@ -116,10 +116,10 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool enabled = Traits<System>::multithread;
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
-    static const int priority_inversion_protocol = CEILING;
+    static const int priority_inversion_protocol = INHERITANCE;
     static const int mp = Traits<System>::multicore;
 
-    typedef RM Criterion;
+    typedef LLF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 
