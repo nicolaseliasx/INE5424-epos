@@ -8,7 +8,7 @@ using namespace EPOS;
 
 const unsigned int iterations = 10;
 // Periods (smaller period indicates higher priority under rate-monotonic scheduling)
-const unsigned int period_a = 100;  // Highest priority
+const unsigned int period_a = 60;  // Highest priority
 const unsigned int period_b = 150;
 const unsigned int period_c = 200;
 
@@ -30,7 +30,7 @@ Periodic_Thread *thread_b;
 Periodic_Thread *thread_c;
 
 int main() {
-    cout << "Start ceiling protocol with inhert priority" << endl;
+    cout << "Start ceiling protocol test" << endl;
 
     thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, wcet_a * 1000, 0, iterations), &func_a);
     thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, wcet_b * 1000, 0, iterations), &func_b);

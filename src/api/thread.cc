@@ -8,6 +8,8 @@ extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1
 
 __BEGIN_SYS
 
+OStream cout;
+
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
@@ -315,27 +317,29 @@ void Thread::wakeup_all(Queue * q)
 void Thread::prioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
-    
-    if(priority_inversion_protocol == Traits<Build>::NONE)
+    if(priority_inversion_protocol == Traits<Build>::NA) {
         return;
-
+    }
+    // ESSE METODO TA ELEVANDO APENAS A PRIORIDADE DE UMA SO SENDO QUE TEM DUAS NO SEMAPHORE
     db<Thread>(TRC) << "Thread::prioritize(q=" << q << ") [running=" << running() << "]" << endl;
-
-    Thread * r = running();
+    Thread * run = running();
     for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
-        if(i->object()->priority() > r->priority()) {
-            r->_natural_priority = r->criterion();
-            Criterion c = (priority_inversion_protocol == Traits<Build>::CEILING) ? CEILING : r->criterion();
-            if(r->_state == READY) {
-                _scheduler.suspend(r);
-                r->_link.rank(c);
-                _scheduler.resume(r);
-            } else if(r->state() == WAITING) {
-                r->_waiting->remove(&r->_link);
-                r->_link.rank(c);
-                r->_waiting->insert(&r->_link);
+        auto owner = i->object();
+        cout << "owner = " << owner << endl;
+        if(owner->priority() > run->priority()) {
+            cout << "Thread::prioritize INVERSION DETECTED"<< endl;
+            owner->_natural_priority = owner->criterion();
+            Criterion c = (priority_inversion_protocol == Traits<Build>::CEILING) ? CEILING : run->criterion();
+            if(owner->_state == READY) {
+                _scheduler.suspend(owner);
+                owner->_link.rank(c);
+                _scheduler.resume(owner);
+            } else if(owner->state() == WAITING) {
+                owner->_waiting->remove(&owner->_link);
+                owner->_link.rank(c);
+                owner->_waiting->insert(&owner->_link);
             } else
-                r->_link.rank(c);
+                owner->_link.rank(c);
         }
     }
 }
@@ -345,27 +349,26 @@ void Thread::deprioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
 
-    if(priority_inversion_protocol == Traits<Build>::NONE)
+    if(priority_inversion_protocol == Traits<Build>::NA)
         return;
 
     db<Thread>(TRC) << "Thread::deprioritize(q=" << q << ") [running=" << running() << "]" << endl;
-
     Thread * r = running();
     Criterion c = r->_natural_priority;
-    for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
-        if(i->object()->priority() != c) {
-            if(r->_state == READY) {
-                _scheduler.suspend(r);
-                r->_link.rank(c);
-                _scheduler.resume(r);
-            } else if(r->state() == WAITING) {
-                r->_waiting->remove(&r->_link);
-                r->_link.rank(c);
-                r->_waiting->insert(&r->_link);
-            } else
-                r->_link.rank(c);
-        }
-    }
+    // for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
+    //     if(i->object()->priority() != c) {
+    if(r->_state == READY) {
+        _scheduler.suspend(r);
+        r->_link.rank(c);
+        _scheduler.resume(r);
+    } else if(r->state() == WAITING) {
+        r->_waiting->remove(&r->_link);
+        r->_link.rank(c);
+        r->_waiting->insert(&r->_link);
+    } else
+        r->_link.rank(c);
+    //     }
+    // }
 }
 
 

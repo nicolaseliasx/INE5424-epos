@@ -28,7 +28,7 @@ Periodic_Thread *thread_b;
 Periodic_Thread *thread_c;
 
 int main() {
-    cout << "Start ceiling protocol with inhert priority" << endl;
+    cout << "Start inheritance protocol test" << endl;
 
     thread_a = new Periodic_Thread(RTConf(period_a * 1000, period_a * 1000, wcet_a * 1000, 0, iterations), &func_a);
     thread_b = new Periodic_Thread(RTConf(period_b * 1000, period_b * 1000, wcet_b * 1000, 0, iterations), &func_b);

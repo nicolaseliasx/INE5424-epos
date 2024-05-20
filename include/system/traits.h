@@ -208,7 +208,7 @@ struct Traits_Tokens
     typedef ALIST<> ASPECTS;
 
     // Priority inversion protocols
-    enum {CEILING, INHERITANCE};
+    enum {CEILING, INHERITANCE, NA};
 };
 
 // Interrupt souces names (for all machines; overridden at Traits<IC>; 0 => not used)
