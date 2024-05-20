@@ -43,7 +43,7 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
     criterion().collect(Criterion::CREATE);
 
     if(preemptive && (_state == READY) && (_link.rank() != IDLE))
-        reschedule();
+        reschedule(_link.rank().queue());
 
     unlock();
 }
@@ -128,6 +128,36 @@ void Thread::priority(const Criterion & c)
     unlock();
 }
 
+// REFERENCE IMPLEMENTATION
+// void Thread::priority(const Criterion & c)
+// {
+//     lock();
+
+//     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
+
+//     unsigned long old_cpu = _link.rank().queue();
+//     unsigned long new_cpu = c.queue();
+
+//     if(_state != RUNNING) { // reorder the scheduling queue
+//         _scheduler.remove(this);
+//         _link.rank(c);
+//         _scheduler.insert(this);
+//     } else
+//         _link.rank(c);
+
+//     if(preemptive) {
+//     	if(mp) {
+//     	    if(old_cpu != CPU::id())
+//     	        reschedule(old_cpu);
+//     	    if(new_cpu != CPU::id())
+//     	        reschedule(new_cpu);
+//     	} else
+//     	    reschedule();
+//     }
+
+//     unlock();
+// }
+
 
 int Thread::join()
 {
@@ -205,7 +235,7 @@ void Thread::resume()
         _scheduler.resume(this);
 
         if(preemptive)
-            reschedule();
+            reschedule(_link.rank().queue());
     } else
         db<Thread>(WRN) << "Resume called for unsuspended object!" << endl;
 
@@ -287,11 +317,11 @@ void Thread::wakeup(Queue * q)
         _scheduler.resume(t);
 
         if(preemptive)
-            reschedule();
+            reschedule(t->_link.rank().queue());
     }
 }
 
-
+// REFERENCE WAKEUP_ALL
 void Thread::wakeup_all(Queue * q)
 {
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
@@ -299,17 +329,43 @@ void Thread::wakeup_all(Queue * q)
     assert(locked()); // locking handled by caller
 
     if(!q->empty()) {
+        assert(Criterion::QUEUES <= sizeof(unsigned long) * 8);
+        unsigned long cpus = Traits<System>::CPUS;
         while(!q->empty()) {
             Thread * t = q->remove()->object();
             t->_state = READY;
             t->_waiting = 0;
             _scheduler.resume(t);
+            cpus |= 1 << t->_link.rank().queue();
         }
 
-        if(preemptive)
-            reschedule();
+        if(preemptive) {
+            for(unsigned long i = 0; i < Criterion::QUEUES; i++)
+                if(cpus & (1 << i))
+                    reschedule(i);
+        }
     }
 }
+
+
+// void Thread::wakeup_all(Queue * q)
+// {
+//     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
+
+//     assert(locked()); // locking handled by caller
+
+//     if(!q->empty()) {
+//         while(!q->empty()) {
+//             Thread * t = q->remove()->object();
+//             t->_state = READY;
+//             t->_waiting = 0;
+//             _scheduler.resume(t);
+//         }
+
+//         if(preemptive)
+//             reschedule();
+//     }
+// }
 
 // Same thing as priority. This needs to be multicore aware using signaling
 void Thread::prioritize(Queue * q)
@@ -374,11 +430,31 @@ void Thread::reschedule()
         db<Thread>(TRC) << "Thread::reschedule()" << endl;
 
     assert(locked()); // locking handled by caller
-    
+
     Thread * prev = running();
     Thread * next = _scheduler.choose();
 
     dispatch(prev, next);
+}
+
+
+void Thread::reschedule(unsigned int cpu)
+{
+    assert(locked()); // locking handled by caller
+
+    if(!mp || (cpu == CPU::id()))
+        reschedule();
+    else {
+        db<Thread>(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
+        IC::ipi(cpu, IC::INT_RESCHEDULER);
+    }
+}
+
+void Thread::rescheduler(IC::Interrupt_Id i)
+{
+    lock();
+    reschedule();
+    unlock();
 }
 
 

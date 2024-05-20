@@ -1299,9 +1299,7 @@ public:
         return _list[R::current_queue()].chosen();
     }
 
-    void insert(Element * e) {
-        _list[e->rank().queue()].insert(e);
-    }
+    void insert(Element * e) { _list[e->rank().queue()].insert(e); }
 
     Element * remove(Element * e) {
          return _list[e->rank().queue()].remove(e);

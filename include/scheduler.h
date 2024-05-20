@@ -82,7 +82,7 @@ public:
     static const bool task_wide = false;
     static const bool cpu_wide = false;
     static const bool system_wide = false;
-    static const unsigned int QUEUES = 1;
+    static const unsigned int QUEUES = Traits<System>::CPUS; // For multilists
     static const unsigned int HEADS = Traits<System>::CPUS; // For multihead lists
 
     // Runtime Statistics (for policies that don't use any; that's why its a union)
@@ -110,8 +110,7 @@ protected:
 public:
     void period(const Microsecond & p) {}
 
-    unsigned int queue() const { return 0; }
-    void queue(unsigned int q) {}
+    unsigned int queue() const { return CPU::id(); }
 
     bool update() { return false; }
     bool update_capacity() { return false; }
@@ -126,6 +125,9 @@ public:
 
     // For multihead list identifiers
     static unsigned int current_head() { return CPU::id(); }
+
+    // For multilist identifiers
+    static unsigned int current_queue() { return CPU::id(); }
 
     static void init() {}
 
