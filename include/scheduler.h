@@ -105,12 +105,12 @@ public:
     };
 
 protected:
-    Scheduling_Criterion_Common(): _statistics() {}
+    Scheduling_Criterion_Common(): _statistics(), _queue(++_next_queue %= CPU::cores()) {}
 
 public:
     void period(const Microsecond & p) {}
 
-    unsigned int queue() const { return CPU::id(); }
+    unsigned int queue() const { return _queue; }
 
     bool update() { return false; }
     bool update_capacity() { return false; }
@@ -133,6 +133,10 @@ public:
 
 protected:
     Statistics _statistics;
+
+    // To queue a thread in the current CPU
+    volatile unsigned int _queue;
+    static volatile unsigned int _next_queue;
 };
 
 // Priority (static and dynamic)
