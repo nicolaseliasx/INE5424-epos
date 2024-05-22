@@ -287,7 +287,7 @@ public:
         return old;
     }
 
-
+    // pode sujar o owner tem problemas identiicados que acontece raramente
     template <typename T>
     static T cas(volatile T& value, T compare, T replacement) {
         register T old;

@@ -110,7 +110,7 @@ protected:
 public:
     void period(const Microsecond & p) {}
 
-    unsigned int queue() const { return CPU::id(); }
+    // unsigned int queue() const { return 0; }
 
     bool update() { return false; }
     bool update_capacity() { return false; }
@@ -125,9 +125,6 @@ public:
 
     // For multihead list identifiers
     static unsigned int current_head() { return CPU::id(); }
-
-    // For multilist identifiers
-    static unsigned int current_queue() { return CPU::id(); }
 
     static void init() {}
 
@@ -144,12 +141,31 @@ class Priority: public Scheduling_Criterion_Common
 
 public:
     template <typename ... Tn>
-    Priority(int p = NORMAL, Tn & ... an): _priority(p) {}
+    Priority(int p = NORMAL, Tn & ... an): _priority(p) {
+        if (_priority == IDLE || _priority == MAIN) {
+            _queue = CPU::id();
+            // db<Thread>(WRN) << "IDLE OR MAIN _queue = " << _queue << endl;
+        } else {
+            // TODO: Se usar aqui CPU::id(); aparentemente funciona, do jeito que ta, tem threads se perdendo
+            _queue = _next_queue;
+            _next_queue = (_next_queue + 1) % CPU::cores();
+            // db<Thread>(WRN) << "NOT IDLE OR MAIN _queue = " << _queue << endl;
+        }
+    }
 
     operator const volatile int() const volatile { return _priority; }
 
+    // Define where will it be inserted
+    const volatile unsigned int & queue() const volatile { return _queue; }
+
+    // For multilist identifiers
+    static unsigned int current_queue() { return CPU::id(); }
+
 protected:
     volatile int _priority;
+
+    volatile unsigned int _queue;
+    static volatile unsigned int _next_queue;
 };
 
 // Round-Robin
