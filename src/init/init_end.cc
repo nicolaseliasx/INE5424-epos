@@ -29,10 +29,15 @@ public:
         if(CPU::id() == CPU::BSP && Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
             MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));
 
-
         db<Init>(INF) << "INIT ends here!" << endl;
 
         CPU::smp_barrier();
+
+        if (Traits<System>::multicore) {
+            // Enabling IPIs
+            IC::int_vector(IC::INT_RESCHEDULER, Thread::rescheduler);  // Handler for rescheduler is just locking and sending a reschedule to that core  
+            IC::enable(IC::INT_RESCHEDULER);                           // Enabling int_rescheduler is enabling software interrupts
+        }
 
         // Thread::self() and Task::self() can be safely called after the construction of MAIN
         // even if no reschedule() was called (running is set by the Scheduler at each insert())

@@ -450,21 +450,9 @@ void Thread::reschedule(unsigned int cpu)
     }
 }
 
-void Thread::rescheduler(IC::Interrupt_Id i)
-{
-    lock();
-    reschedule();
-    unlock();
-}
-
-
-void Thread::time_slicer(IC::Interrupt_Id i)
-{
-    lock();
-    reschedule();
-    unlock();
-}
-
+// rescheduler and time_slicer are the same functions. They are both defined so we can debug it properly
+void Thread::rescheduler(IC::Interrupt_Id i) { lock(); reschedule(); unlock(); }
+void Thread::time_slicer(IC::Interrupt_Id i) { lock(); reschedule(); unlock(); }
 
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
