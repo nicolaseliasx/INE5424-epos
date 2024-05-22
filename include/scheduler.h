@@ -105,12 +105,12 @@ public:
     };
 
 protected:
-    Scheduling_Criterion_Common(): _statistics(), _queue(++_next_queue %= CPU::cores()) {}
+    Scheduling_Criterion_Common(): _statistics() {}
 
 public:
     void period(const Microsecond & p) {}
 
-    unsigned int queue() const { return _queue; }
+    unsigned int queue() const { return 0; }
 
     bool update() { return false; }
     bool update_capacity() { return false; }
@@ -133,10 +133,6 @@ public:
 
 protected:
     Statistics _statistics;
-
-    // To queue a thread in the current CPU
-    volatile unsigned int _queue;
-    static volatile unsigned int _next_queue;
 };
 
 // Priority (static and dynamic)
@@ -148,12 +144,26 @@ class Priority: public Scheduling_Criterion_Common
 
 public:
     template <typename ... Tn>
-    Priority(int p = NORMAL, Tn & ... an): _priority(p) {}
+    Priority(int p = NORMAL, Tn & ... an): _priority(p) {
+        if (_priority == IDLE || _priority == MAIN) {
+            _queue = CPU::id();
+            db<Thread>(WRN) << "IDLE OR MAIN _queue = " << _queue << endl;
+        } else {
+            _queue = _next_queue;
+            _next_queue = (_next_queue + 1) % CPU::cores();
+            db<Thread>(WRN) << "NOT IDLE OR MAIN _queue = " << _queue << endl;
+        }
+    }
 
     operator const volatile int() const volatile { return _priority; }
 
+    const volatile unsigned int & queue() const volatile { return _queue; }
+
 protected:
     volatile int _priority;
+
+    volatile unsigned int _queue;
+    static volatile unsigned int _next_queue;
 };
 
 // Round-Robin

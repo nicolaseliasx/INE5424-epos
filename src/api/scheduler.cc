@@ -5,7 +5,7 @@
 
 __BEGIN_SYS
 
-volatile unsigned int Scheduling_Criterion_Common::_next_queue = 0;
+volatile unsigned int Priority::_next_queue = 0;
 
 inline Real_Time_Scheduler_Common::Tick Real_Time_Scheduler_Common::elapsed() { return Alarm::elapsed(); }
 
