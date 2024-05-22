@@ -7,6 +7,7 @@
 extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1S6Thread4selfEv"))); }
 
 __BEGIN_SYS
+OStream cout;
 
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
@@ -19,6 +20,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
+    cout << "Thread queue() = " << this->criterion().queue() << endl;
     _scheduler.insert(this);
 
     _stack = new (SYSTEM) char[stack_size];
