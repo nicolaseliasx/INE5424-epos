@@ -118,8 +118,9 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool simulate_capacity = false;
     static const int priority_inversion_protocol = NA;
     static const int mp = Traits<System>::multicore;
+    // TODO: Criar um trais que decide qual o tipo de list que usa criando um enum entre Multiheadlist e Multilist BASEADO NO CRITERION
 
-    typedef RR Criterion;
+    typedef LLF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 

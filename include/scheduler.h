@@ -154,7 +154,7 @@ public:
 
     operator const volatile int() const volatile { return _priority; }
 
-    // Define where will it be inserted
+    // TODO: Tem que fazer logica aqui pra se nao for multilist retornar 0
     const volatile unsigned int & queue() const volatile { return _queue; }
 
     // For multilist identifiers
@@ -281,6 +281,8 @@ public:
 
     void update();
 };
+
+// TODO: Criar GLLF E PLLF Que basicamente são as mesmas coisas mas servem de logica pro traits decidir qual lista usar
 
 __END_SYS
 

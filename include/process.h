@@ -90,6 +90,7 @@ public:
                 i->object()->criterion().collect(Criterion::UPDATE);
             }
         }
+        // TODO: sinalizar core apenas quando nao for multilist
     }
 
     int join();
