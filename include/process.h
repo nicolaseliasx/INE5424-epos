@@ -84,11 +84,12 @@ public:
     void priority(const Criterion & p);
 
     static void update_all_priorities() {
-        for(Queue::Iterator i = _scheduler.begin(); i != _scheduler.end(); ++i)
+        for(Queue::Iterator i = _scheduler.begin(); i != _scheduler.end(); ++i) {
             if(i->object()->criterion() != IDLE) {
                 i->object()->criterion().update();
                 i->object()->criterion().collect(Criterion::UPDATE);
             }
+        }
     }
 
     int join();

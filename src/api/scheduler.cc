@@ -5,6 +5,8 @@
 
 __BEGIN_SYS
 
+Simple_Spin Priority::_spin;
+
 volatile unsigned int Priority::_next_queue = 0;
 
 inline Real_Time_Scheduler_Common::Tick Real_Time_Scheduler_Common::elapsed() { return Alarm::elapsed(); }

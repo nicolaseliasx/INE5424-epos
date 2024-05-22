@@ -144,12 +144,11 @@ public:
     Priority(int p = NORMAL, Tn & ... an): _priority(p) {
         if (_priority == IDLE || _priority == MAIN) {
             _queue = CPU::id();
-            // db<Thread>(WRN) << "IDLE OR MAIN _queue = " << _queue << endl;
         } else {
-            // TODO: Se usar aqui CPU::id(); aparentemente funciona, do jeito que ta, tem threads se perdendo
+            _spin.acquire();
             _queue = _next_queue;
             _next_queue = (_next_queue + 1) % CPU::cores();
-            // db<Thread>(WRN) << "NOT IDLE OR MAIN _queue = " << _queue << endl;
+            _spin.release();
         }
     }
 
@@ -166,6 +165,7 @@ protected:
 
     volatile unsigned int _queue;
     static volatile unsigned int _next_queue;
+    static Simple_Spin _spin;
 };
 
 // Round-Robin

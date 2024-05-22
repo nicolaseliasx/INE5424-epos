@@ -287,10 +287,13 @@ public:
         return old;
     }
 
-    // pode sujar o owner tem problemas identiicados que acontece raramente
+    // TA ZUADO
     template <typename T>
     static T cas(volatile T& value, T compare, T replacement) {
         register T old;
+        // mover isso direto pro assmbly deve funcionar
+        register T _locked = 0;
+        while(CPU::tsl(_locked));
         if (sizeof(T) == sizeof(Reg64)) {
             ASM("   amoswap.d   %0, %3, (%1)   \n"
                 "   beq         %0, %2, 2f     \n"
@@ -302,8 +305,76 @@ public:
                 "   amoswap.w   t3, %0, (%1)   \n"
                 "2:                            \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
         }
+
+        _locked = 0;
         return old;
     }
+
+    /*
+    Assembly Operand Mapping for the 'cas' function:
+
+    %0: 'old' - Register used as output to store the old value fetched from the memory location '&value'.
+    %1: '&value' - Address of the variable 'value'. This register is used as input to point to the memory location to be accessed.
+    %2: 'compare' - Value used for comparison to decide if the value at the memory location '&value' should be swapped. Compared with the current value at '&value' ('old').
+    %3: '&lock' - Address of the 'lock' variable. This is the lock that is attempted for acquisition before performing the 'cas' operation.
+    %4: 'one' - Typically a constant (1), used to attempt to set the lock to a locked state.
+    %5: 'replacement' - Value that will be placed in '&value' if 'old' equals 'compare'.
+
+    Special Registers:
+    t3: Used for checking and setting the lock state.
+
+    Clobber List:
+    't3', 'cc', 'memory' - Indicates that these resources might be altered by the assembly code.
+        't3' - Explicitly modified.
+        'cc' - Condition flags might be changed (e.g., from comparisons).
+        'memory' - Indicates that memory operations are occurring, necessitating that the compiler treat memory as volatile to avoid optimizations that may assume old memory values.
+    */
+    // TA ZUADO
+    // template <typename T>
+    // static T cas(volatile T& value, T compare, T replacement) {
+    //     register T old;
+    //     register T lock = 0;
+    //     register T one = 1;
+    //     // Spin lock
+    //     if (sizeof(T) == sizeof(Reg64)) {
+    //         ASM(
+    //             "1: amoswap.d  t3, %4, (%3)   \n" // tenta adquirir o lock
+    //             "   bnez       t3, 1b         \n" // se t3 não é zero, lock já está adquirido, tenta novamente
+    //             "   amoswap.d  %0, %5, (%1)   \n" // realiza o CAS
+    //             "   beq        %0, %2, 2f     \n" // verifica se old == compare
+    //             "   amoswap.d  t3, %0, (%1)   \n" // restaura valor original se falhar
+    //             "2: amoswap.d  t3, %0, (%3)   \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(&lock), "r"(one), "r"(replacement) : "t3", "cc", "memory"
+    //         );
+    //     } else {
+    //         ASM(
+    //             "1: amoswap.w  t3, %4, (%3)   \n" // tenta adquirir o lock
+    //             "   bnez       t3, 1b         \n" // se t3 não é zero, lock já está adquirido, tenta novamente
+    //             "   amoswap.w  %0, %5, (%1)   \n" // realiza o CAS
+    //             "   beq        %0, %2, 2f     \n" // verifica se old == compare
+    //             "   amoswap.w  t3, %0, (%1)   \n" // restaura valor original se falhar
+    //             "2: amoswap.w  t3, %0, (%3)   \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(&lock), "r"(one), "r"(replacement) : "t3", "cc", "memory"
+    //         );
+    //     }
+    //     return old;
+    // }
+
+    // template <typename T>
+    // static T cas(volatile T & value, T compare, T replacement) {
+    //     register T old;
+    //     if(sizeof(T) == sizeof(Reg64))
+    //         ASM("1: lr.d    %0, (%1)        \n"
+    //             "   bne     %0, %2, 2f      \n"
+    //             "   sc.d    t3, %3, (%1)    \n"
+    //             "   bnez    t3, 1b          \n"
+    //             "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+    //     else
+    //         ASM("1: lr.w    %0, (%1)        \n"
+    //             "   bne     %0, %2, 2f      \n"
+    //             "   sc.w    t3, %3, (%1)    \n"
+    //             "   bnez    t3, 1b          \n"
+    //             "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+    //     return old;
+    // }
 
     static void flush_tlb() {         ASM("sfence.vma"    : :           : "memory"); }
     static void flush_tlb(Reg addr) { ASM("sfence.vma %0" : : "r"(addr) : "memory"); }

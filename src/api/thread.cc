@@ -20,7 +20,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
-    cout << "Thread queue() = " << this->criterion().queue() << endl;
+    // cout << "Thread queue() = " << this->criterion().queue() << endl;
     _scheduler.insert(this);
 
     _stack = new (SYSTEM) char[stack_size];
