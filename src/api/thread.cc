@@ -96,20 +96,6 @@ Thread::~Thread()
     delete _stack;
 }
 
-// Precisamos decidir qual vai ser a estratégia para avisar aos outros cores quando uma tarefa tem a sua prioridade reavaliada.
-// Temos que mandar IC::ipi's pros outros cores. Nessa linha, iremos mandar apenas para aquele core que teve uma thread sua alterada
-// Ou para todos os cores e cada core "se vira" com essa informação?
-
-// Priority needs to be multicore! Needs to use IPI to signal other cores that the scheduler list has been updated
-
-// It should use IC::ipi to send signals to other processors
-// We need to determine what are our strategy
-
-    // static void ipi(unsigned int cpu, Interrupt_Id i) {
-    //     db<IC>(TRC) << "IC::ipi(cpu=" << cpu << ",int=" << i << ")" << endl;
-    //     assert(i < INTS);
-    //     msip(cpu) = 1;
-    // }
 
 void Thread::priority(const Criterion & c)
 {
@@ -125,40 +111,10 @@ void Thread::priority(const Criterion & c)
         _link.rank(Criterion(c));
 
     if(preemptive)
-        reschedule();
+        reschedule(this->_link.rank().queue());
 
     unlock();
 }
-
-// REFERENCE IMPLEMENTATION
-// void Thread::priority(const Criterion & c)
-// {
-//     lock();
-
-//     db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
-
-//     unsigned long old_cpu = _link.rank().queue();
-//     unsigned long new_cpu = c.queue();
-
-//     if(_state != RUNNING) { // reorder the scheduling queue
-//         _scheduler.remove(this);
-//         _link.rank(c);
-//         _scheduler.insert(this);
-//     } else
-//         _link.rank(c);
-
-//     if(preemptive) {
-//     	if(mp) {
-//     	    if(old_cpu != CPU::id())
-//     	        reschedule(old_cpu);
-//     	    if(new_cpu != CPU::id())
-//     	        reschedule(new_cpu);
-//     	} else
-//     	    reschedule();
-//     }
-
-//     unlock();
-// }
 
 
 int Thread::join()
@@ -374,6 +330,10 @@ void Thread::prioritize(Queue * q)
                 owner->_waiting->insert(&owner->_link);
             } else
                 owner->_link.rank(c);
+
+            if(mp && owner->criterion().queue() != CPU::id()) {
+                reschedule(owner->criterion().queue());
+            }
         }
     }
 }
@@ -402,6 +362,10 @@ void Thread::deprioritize(Queue * q)
                 owner->_waiting->insert(&owner->_link);
             } else
                 owner->_link.rank(c);
+
+            if(mp && owner->criterion().queue() != CPU::id()) {
+                reschedule(owner->criterion().queue());
+            }
         }
     }
 }

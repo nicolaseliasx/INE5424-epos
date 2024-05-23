@@ -289,30 +289,30 @@ public:
     }
 
     // TA ZUADO
-    template <typename T>
-    static T cas(volatile T& value, T compare, T replacement, T lock) {
-        register T old;
-        register T one = 1;
-        register T zero = 0;
-        if (sizeof(T) == sizeof(Reg64)) {
-            ASM("   amoswap.d   t4, %4, (%5)    \n" // Tentar o lock para atomizar o CAS 
-                "   bnez        t4, 1f          \n" // Caso não consiga, limpo o lock (pois sujei na tentativa) e retorno
-                "   amoswap.d   %0, %3, (%1)    \n" // Tentativa de ocupar o CAS
-                "   beq         %0, %2, 1f      \n" // Caso tentativa seja bem sucedida, limpo somente o lock da atomização do CAS e retorno
-                "   amoswap.d   t3, %0, (%1)    \n" // Numa tentativa falha, preciso limpar o lock do próprio CAS, da atomização do CAS e retornar
-                "1: amoswap.d   t4, %6, (%5)    \n" // Limpar lock de atomização do CAS e retornar
-                : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(lock), "r"(zero) : "t3", "t4", "cc", "memory");
-        } else {
-            ASM("   amoswap.w   t4, %4, (%5)    \n"
-                "   bnez        t4, 1f          \n"
-                "   amoswap.w   %0, %3, (%1)    \n"
-                "   beq         %0, %2, 1f      \n"
-                "   amoswap.w   t3, %0, (%1)    \n"
-                "1: amoswap.w   t4, %6, (%5)    \n"
-                : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(lock), "r"(zero) : "t3", "t4", "cc", "memory");
-        }
-        return old;
-    }
+    // template <typename T>
+    // static T cas(volatile T& value, T compare, T replacement, T lock) {
+    //     register T old;
+    //     register T one = 1;
+    //     register T zero = 0;
+    //     if (sizeof(T) == sizeof(Reg64)) {
+    //         ASM("   amoswap.d   t4, %4, (%5)    \n" // Tentar o lock para atomizar o CAS 
+    //             "   bnez        t4, 1f          \n" // Caso não consiga, limpo o lock (pois sujei na tentativa) e retorno
+    //             "   amoswap.d   %0, %3, (%1)    \n" // Tentativa de ocupar o CAS
+    //             "   beq         %0, %2, 1f      \n" // Caso tentativa seja bem sucedida, limpo somente o lock da atomização do CAS e retorno
+    //             "   amoswap.d   t3, %0, (%1)    \n" // Numa tentativa falha, preciso limpar o lock do próprio CAS, da atomização do CAS e retornar
+    //             "1: amoswap.d   t4, %6, (%5)    \n" // Limpar lock de atomização do CAS e retornar
+    //             : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(lock), "r"(zero) : "t3", "t4", "cc", "memory");
+    //     } else {
+    //         ASM("   amoswap.w   t4, %4, (%5)    \n"
+    //             "   bnez        t4, 1f          \n"
+    //             "   amoswap.w   %0, %3, (%1)    \n"
+    //             "   beq         %0, %2, 1f      \n"
+    //             "   amoswap.w   t3, %0, (%1)    \n"
+    //             "1: amoswap.w   t4, %6, (%5)    \n"
+    //             : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(lock), "r"(zero) : "t3", "t4", "cc", "memory");
+    //     }
+    //     return old;
+    // }
 
     /*
     Assembly Operand Mapping for the 'cas' function:
@@ -362,23 +362,23 @@ public:
     //     return old;
     // }
 
-    // template <typename T>
-    // static T cas(volatile T & value, T compare, T replacement) {
-    //     register T old;
-    //     if(sizeof(T) == sizeof(Reg64))
-    //         ASM("1: lr.d    %0, (%1)        \n"
-    //             "   bne     %0, %2, 2f      \n"
-    //             "   sc.d    t3, %3, (%1)    \n"
-    //             "   bnez    t3, 1b          \n"
-    //             "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
-    //     else
-    //         ASM("1: lr.w    %0, (%1)        \n"
-    //             "   bne     %0, %2, 2f      \n"
-    //             "   sc.w    t3, %3, (%1)    \n"
-    //             "   bnez    t3, 1b          \n"
-    //             "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
-    //     return old;
-    // }
+    template <typename T>
+    static T cas(volatile T & value, T compare, T replacement) {
+        register T old;
+        if(sizeof(T) == sizeof(Reg64))
+            ASM("1: lr.d    %0, (%1)        \n"
+                "   bne     %0, %2, 2f      \n"
+                "   sc.d    t3, %3, (%1)    \n"
+                "   bnez    t3, 1b          \n"
+                "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+        else
+            ASM("1: lr.w    %0, (%1)        \n"
+                "   bne     %0, %2, 2f      \n"
+                "   sc.w    t3, %3, (%1)    \n"
+                "   bnez    t3, 1b          \n"
+                "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+        return old;
+    }
 
     static void flush_tlb() {         ASM("sfence.vma"    : :           : "memory"); }
     static void flush_tlb(Reg addr) { ASM("sfence.vma %0" : : "r"(addr) : "memory"); }

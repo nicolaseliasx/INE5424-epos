@@ -18,8 +18,7 @@ public:
     void acquire() {
         unsigned long me = _running();
 
-        while(CPU::cas(_owner, 0UL, me, _lock) != me);
-        _lock = 0;
+        while(CPU::cas(_owner, 0UL, me) != me);
         _level++;
 
         db<Spin>(TRC) << "Spin::acquire[this=" << this << ",id=" << hex << me << "]() => {owner=" << _owner << dec << ",level=" << _level << "}" << endl;
