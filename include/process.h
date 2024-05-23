@@ -7,6 +7,7 @@
 #include <machine.h>
 #include <utility/queue.h>
 #include <utility/handler.h>
+#include <utility/priority_stack.h>
 #include <scheduler.h>
 
 extern "C" { void __exit(); }
@@ -154,7 +155,7 @@ protected:
     Queue * _waiting;
     Thread * volatile _joining;
     Queue::Element _link;
-    Criterion _natural_priority = -9000;
+    Priority_Stack _natural_priority;
 
     static bool _not_booting;
     static volatile unsigned int _thread_count;

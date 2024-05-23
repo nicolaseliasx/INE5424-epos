@@ -323,7 +323,7 @@ void Thread::wakeup(Queue * q)
     }
 }
 
-// REFERENCE WAKEUP_ALL
+
 void Thread::wakeup_all(Queue * q)
 {
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
@@ -350,25 +350,6 @@ void Thread::wakeup_all(Queue * q)
 }
 
 
-// void Thread::wakeup_all(Queue * q)
-// {
-//     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
-
-//     assert(locked()); // locking handled by caller
-
-//     if(!q->empty()) {
-//         while(!q->empty()) {
-//             Thread * t = q->remove()->object();
-//             t->_state = READY;
-//             t->_waiting = 0;
-//             _scheduler.resume(t);
-//         }
-
-//         if(preemptive)
-//             reschedule();
-//     }
-// }
-
 // Same thing as priority. This needs to be multicore aware using signaling
 void Thread::prioritize(Queue * q)
 {
@@ -376,13 +357,12 @@ void Thread::prioritize(Queue * q)
     if(priority_inversion_protocol == Traits<Build>::NA || q->empty()) {
         return;
     }
-
     db<Thread>(TRC) << "Thread::prioritize(q=" << q << ") [running=" << running() << "]" << endl;
     Thread * run = running();
     for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
         auto owner = i->object();
         if(owner->priority() > run->priority()) {
-            owner->_natural_priority = owner->criterion();
+            owner->_natural_priority.push(owner->criterion());
             Criterion c = (priority_inversion_protocol == Traits<Build>::CEILING) ? CEILING : run->criterion();
             if(owner->_state == READY) {
                 _scheduler.suspend(owner);
@@ -398,19 +378,20 @@ void Thread::prioritize(Queue * q)
     }
 }
 
+
 // This guy needs to be multicore aware as well!
 void Thread::deprioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
-
     if(priority_inversion_protocol == Traits<Build>::NA || q->empty())
         return;
 
     db<Thread>(TRC) << "Thread::deprioritize(q=" << q << ") [running=" << running() << "]" << endl;
     for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
         auto owner = i->object();
-        Criterion c = owner->_natural_priority;
-        if(owner->_natural_priority != -9000) {
+        // Deveria ser um list de criterions para não perder as estatisticas, mais detalhes encima dessa classe
+        Criterion c = Criterion(owner->_natural_priority.pop());
+        if(c != -1) {
             if(owner->_state == READY) {
                 _scheduler.suspend(owner);
                 owner->_link.rank(c);
