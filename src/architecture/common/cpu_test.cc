@@ -56,11 +56,12 @@ int main()
         volatile int number = 100;
         volatile int compare = number;
         volatile int replacement = number - 1;
+        volatile int lock = 0;
         volatile int tmp;
-        if((tmp = cpu.cas(number, compare, replacement)) != compare)
+        if((tmp = cpu.cas(number, compare, replacement, lock)) != compare)
             cout << "failed [1] (n=" << tmp << ", should be " << compare << ")!" << endl;
         else
-            if((tmp = cpu.cas(number, compare, replacement)) != replacement)
+            if((tmp = cpu.cas(number, compare, replacement, lock)) != replacement)
                 cout << "failed [2] (n=" << tmp << ", should be " << replacement << ")!" << endl;
             else
                 cout << "passed!" << endl;

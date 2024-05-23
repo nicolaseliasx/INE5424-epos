@@ -13,6 +13,7 @@ class CPU: protected CPU_Common
 
 private:
     static const bool supervisor = Traits<Machine>::supervisor;
+    static const long cas_lock;
 
 public:
     // Boostrap Setup Processor
@@ -289,24 +290,27 @@ public:
 
     // TA ZUADO
     template <typename T>
-    static T cas(volatile T& value, T compare, T replacement) {
+    static T cas(volatile T& value, T compare, T replacement, T lock) {
         register T old;
-        // mover isso direto pro assmbly deve funcionar
-        register T _locked = 0;
-        while(CPU::tsl(_locked));
+        register T one = 1;
+        register T zero = 0;
         if (sizeof(T) == sizeof(Reg64)) {
-            ASM("   amoswap.d   %0, %3, (%1)   \n"
-                "   beq         %0, %2, 2f     \n"
-                "   amoswap.d   t3, %0, (%1)   \n"
-                "2:                            \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+            ASM("   amoswap.d   t4, %4, (%5)    \n" // Tentar o lock para atomizar o CAS 
+                "   bnez        t4, 1f          \n" // Caso não consiga, limpo o lock (pois sujei na tentativa) e retorno
+                "   amoswap.d   %0, %3, (%1)    \n" // Tentativa de ocupar o CAS
+                "   beq         %0, %2, 1f      \n" // Caso tentativa seja bem sucedida, limpo somente o lock da atomização do CAS e retorno
+                "   amoswap.d   t3, %0, (%1)    \n" // Numa tentativa falha, preciso limpar o lock do próprio CAS, da atomização do CAS e retornar
+                "1: amoswap.d   t4, %6, (%5)    \n" // Limpar lock de atomização do CAS e retornar
+                : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(lock), "r"(zero) : "t3", "t4", "cc", "memory");
         } else {
-            ASM("   amoswap.w   %0, %3, (%1)   \n"
-                "   beq         %0, %2, 2f     \n"
-                "   amoswap.w   t3, %0, (%1)   \n"
-                "2:                            \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+            ASM("   amoswap.w   t4, %4, (%5)    \n"
+                "   bnez        t4, 1f          \n"
+                "   amoswap.w   %0, %3, (%1)    \n"
+                "   beq         %0, %2, 1f      \n"
+                "   amoswap.w   t3, %0, (%1)    \n"
+                "1: amoswap.w   t4, %6, (%5)    \n"
+                : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(lock), "r"(zero) : "t3", "t4", "cc", "memory");
         }
-
-        _locked = 0;
         return old;
     }
 
