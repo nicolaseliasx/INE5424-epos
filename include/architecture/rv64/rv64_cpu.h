@@ -380,6 +380,31 @@ public:
         return old;
     }
 
+    // template <typename T>
+    // static T cas(volatile T & value, T compare, T replacement) {
+    //     register T old;
+    //     register T old_lock;
+        
+    //     register T one = 1;
+    //     register T zero = 0;
+
+    //     if(sizeof(T) == sizeof(Reg64))
+    //         ASM("1: amoswap.d.aq    %1, %5, (%4)    \n"
+    //             "1: lr.d            %0, (%2)        \n"
+    //             "   bne             %0, %3, 2f      \n"
+    //             "   sc.d            t3, %4, (%2)    \n"
+    //             "2: amoswap.d.rl    %1, %6, (%4)    \n" : "=&r"(old), "=&r"(old_lock) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(zero) : "t3", "cc", "memory"
+    //         );
+    //     else
+    //         ASM("1: amoswap.w.aq    %1, %5, (%4)    \n"
+    //             "1: lr.w            %0, (%2)        \n"
+    //             "   bne             %0, %3, 2f      \n"
+    //             "   sc.w            t3, %4, (%2)    \n"
+    //             "2: amoswap.w.rl    %1, %6, (%4)    \n" : "=&r"(old), "=&r"(old_lock) : "r"(&value), "r"(compare), "r"(replacement), "r"(one), "r"(zero) : "t3", "cc", "memory"
+    //         );
+    //     return old;
+    // }
+
     static void flush_tlb() {         ASM("sfence.vma"    : :           : "memory"); }
     static void flush_tlb(Reg addr) { ASM("sfence.vma %0" : : "r"(addr) : "memory"); }
 
