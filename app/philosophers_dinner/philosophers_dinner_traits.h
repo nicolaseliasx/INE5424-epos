@@ -21,6 +21,10 @@ template<> struct Traits<Build>: public Traits_Tokens
     static const bool enabled = true;
     static const bool debugged = true;
     static const bool hysterically_debugged = false;
+
+    // TENTAR SETAR ISSO COM BASE NO CRITERION
+    // Flag for circle distribution of threads in multilist
+    static const bool CIRCLE_QUEUE = false;
 };
 
 
@@ -120,7 +124,7 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const int mp = Traits<System>::multicore;
     // TODO: Criar um trais que decide qual o tipo de list que usa criando um enum entre Multiheadlist e Multilist BASEADO NO CRITERION
 
-    typedef LLF Criterion;
+    typedef GLLF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 

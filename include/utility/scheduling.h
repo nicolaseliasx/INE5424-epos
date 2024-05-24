@@ -13,7 +13,7 @@ __BEGIN_UTIL
 
 // Scheduling_Queue
 template<typename T, typename R = typename T::Criterion>
-class Scheduling_Queue: public Scheduling_Multilist<T> {// TODO: ESSA PARTE TEM QUE SER SETADA DE ALGUMA FORMA APARTIR DO TRAITS DE MULTILIST
+class Scheduling_Queue: public Multihead_Scheduling_Multilist<T> {// TODO: ESSA PARTE TEM QUE SER SETADA DE ALGUMA FORMA APARTIR DO TRAITS DE MULTILIST
 };
 
 
@@ -30,7 +30,7 @@ private:
 
 public:
     typedef typename T::Criterion Criterion;
-    typedef Scheduling_Multilist<T, Criterion> Queue;// TODO: ESSA PARTE TEM QUE SER SETADA DE ALGUMA FORMA APARTIR DO TRAITS DE MULTILIST
+    typedef Multihead_Scheduling_Multilist<T, Criterion> Queue;// TODO: ESSA PARTE TEM QUE SER SETADA DE ALGUMA FORMA APARTIR DO TRAITS DE MULTILIST
     typedef typename Queue::Iterator Iterator;
     typedef typename Queue::Element Element;
 

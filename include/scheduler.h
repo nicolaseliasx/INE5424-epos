@@ -82,9 +82,11 @@ public:
     static const bool task_wide = false;
     static const bool cpu_wide = false;
     static const bool system_wide = false;
-    static const unsigned int QUEUES = Traits<System>::CPUS; // For multilists
-    static const unsigned int HEADS = Traits<System>::CPUS; // For multihead lists
 
+    //default values
+    static const unsigned int QUEUES = 1;
+    static const unsigned int HEADS = Traits<System>::CPUS;
+    
     // Runtime Statistics (for policies that don't use any; that's why its a union)
     union Statistics {
         // Thread related statistics
@@ -110,8 +112,6 @@ protected:
 public:
     void period(const Microsecond & p) {}
 
-    // unsigned int queue() const { return 0; }
-
     bool update() { return false; }
     bool update_capacity() { return false; }
 
@@ -123,10 +123,12 @@ public:
 
     volatile Statistics & statistics() { return _statistics; }
 
-    // For multihead list identifiers
+    static void init() {}
+
+    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
     static unsigned int current_head() { return CPU::id(); }
 
-    static void init() {}
+    static unsigned int current_queue() { return 0; }
 
 protected:
     Statistics _statistics;
@@ -140,32 +142,33 @@ class Priority: public Scheduling_Criterion_Common
     friend class _SYS::RT_Thread;
 
 public:
+    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
     template <typename ... Tn>
-    Priority(int p = NORMAL, Tn & ... an): _priority(p) {
-        if (_priority == IDLE || _priority == MAIN) {
-            _queue = CPU::id();
+    Priority(int p = NORMAL, bool CIRCLE_QUEUE = Traits<System>::CIRCLE_QUEUE ? true : false, Tn & ... an): _priority(p) {
+        if (CIRCLE_QUEUE) {
+            if (_priority == IDLE || _priority == MAIN) {
+                _queue = CPU::id();
+            } else {
+                _lock.acquire();
+                _queue = _next_queue;
+                _next_queue = (_next_queue + 1) % CPU::cores();
+                _lock.release();
+            }
         } else {
-            _spin.acquire();
-            _queue = _next_queue;
-            _next_queue = (_next_queue + 1) % CPU::cores();
-            _spin.release();
+            _queue = 0;
         }
     }
 
-    operator const volatile int() const volatile { return _priority; }
-
-    // TODO: Tem que fazer logica aqui pra se nao for multilist retornar 0
     const volatile unsigned int & queue() const volatile { return _queue; }
 
-    // For multilist identifiers
-    static unsigned int current_queue() { return CPU::id(); }
-
-protected:
-    volatile int _priority;
+    operator const volatile int() const volatile { return _priority; }
 
     volatile unsigned int _queue;
     static volatile unsigned int _next_queue;
-    static Simple_Spin _spin;
+    static Simple_Spin _lock;
+
+protected:
+    volatile int _priority;
 };
 
 // Round-Robin
@@ -267,7 +270,8 @@ public:
     void update();
 };
 
-// Least Laxity First
+
+// Least Laxity First --> TODO: Mudar pra GLLF
 class LLF: public Real_Time_Scheduler_Common
 {
 public:
@@ -282,7 +286,40 @@ public:
     void update();
 };
 
-// TODO: Criar GLLF E PLLF Que basicamente são as mesmas coisas mas servem de logica pro traits decidir qual lista usar
+// Least Laxity First --> TODO: DELETAR E MANTER APENAS O LLF? SÃO IGUAIS
+class GLLF: public LLF
+{
+public:
+    GLLF(int p = APERIODIC): LLF(p) {}
+    GLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c) {}
+
+    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
+    static unsigned int current_head() { return CPU::id(); }
+
+    static unsigned int current_queue() { return 0; }
+
+    static const unsigned int QUEUES = 1;
+    static const unsigned int HEADS = Traits<System>::CPUS;
+};
+
+class PLLF: public LLF
+{
+public:
+    PLLF(int p = APERIODIC): LLF(p) {}
+    PLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c) {}
+
+    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
+    // For multihead list identifiers
+    static unsigned int current_head() { return 0; }
+
+    // For multilist identifiers
+    static unsigned int current_queue() { return CPU::id(); }
+
+    static const unsigned int QUEUES = Traits<System>::CPUS; // For multilists
+    static const unsigned int HEADS = 1; // For multihead lists
+};
+
+// TODO: CRIAR TESTE PARA TODAS ESSAS CLASSES
 
 __END_SYS
 

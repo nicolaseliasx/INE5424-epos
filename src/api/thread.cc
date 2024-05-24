@@ -8,7 +8,7 @@ extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1
 
 __BEGIN_SYS
 OStream cout;
-
+// TODO: Precisa reavaliar isso aqui pro GLLF?
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
@@ -20,7 +20,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
-    // cout << "Thread queue() = " << this->criterion().queue() << endl;
+    cout << "Thread queue() = " << this->criterion().queue() << endl;
     _scheduler.insert(this);
 
     _stack = new (SYSTEM) char[stack_size];
@@ -331,6 +331,7 @@ void Thread::prioritize(Queue * q)
             } else
                 owner->_link.rank(c);
 
+            // TODO: Precisa reavaliar isso aqui pro GLLF?
             if(mp && owner->criterion().queue() != CPU::id()) {
                 reschedule(owner->criterion().queue());
             }
@@ -362,7 +363,7 @@ void Thread::deprioritize(Queue * q)
                 owner->_waiting->insert(&owner->_link);
             } else
                 owner->_link.rank(c);
-
+            // TODO: Precisa reavaliar isso aqui pro GLLF?
             if(mp && owner->criterion().queue() != CPU::id()) {
                 reschedule(owner->criterion().queue());
             }

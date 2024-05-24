@@ -5,7 +5,7 @@
 
 __BEGIN_SYS
 
-Simple_Spin Priority::_spin;
+Simple_Spin Priority::_lock;
 
 volatile unsigned int Priority::_next_queue = 0;
 
