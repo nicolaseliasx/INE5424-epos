@@ -271,7 +271,7 @@ public:
 };
 
 
-// Least Laxity First --> TODO: Mudar pra GLLF
+// Least Laxity First
 class LLF: public Real_Time_Scheduler_Common
 {
 public:
@@ -286,7 +286,7 @@ public:
     void update();
 };
 
-// Least Laxity First --> TODO: DELETAR E MANTER APENAS O LLF? SÃO IGUAIS
+// Global Least Laxity First
 class GLLF: public LLF
 {
 public:

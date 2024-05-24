@@ -13,7 +13,7 @@ class CPU: protected CPU_Common
 
 private:
     static const bool supervisor = Traits<Machine>::supervisor;
-    static const long cas_lock;
+    static volatile long cas_lock;
 
 public:
     // Boostrap Setup Processor
@@ -365,20 +365,30 @@ public:
     template <typename T>
     static T cas(volatile T & value, T compare, T replacement) {
         register T old;
-        if(sizeof(T) == sizeof(Reg64))
-            ASM("1: lr.d    %0, (%1)        \n"
-                "   bne     %0, %2, 2f      \n"
-                "   sc.d    t3, %3, (%1)    \n"
-                "   bnez    t3, 1b          \n"
-                "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
-        else
-            ASM("1: lr.w    %0, (%1)        \n"
-                "   bne     %0, %2, 2f      \n"
-                "   sc.w    t3, %3, (%1)    \n"
-                "   bnez    t3, 1b          \n"
-                "2:                         \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement) : "t3", "cc", "memory");
+        if(sizeof(T) == sizeof(Reg64)) {
+           ASM("   li           t0, 1                  \n"
+               "1: amoswap.d.aq t0, t0, (%4)           \n"
+               "   bnez         t0, 1b                 \n"
+               "   lr.d         %0, (%1)               \n"
+               "   bne          %0, %2, 2f             \n"
+               "   sc.d         t3, %3, (%1)           \n"
+               "   bnez         t3, 1b                 \n"
+               "2: amoswap.d.rl x0, x0, (%4)           \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(&cas_lock) : "t0", "t3", "cc", "memory");
+
+        } else {
+            ASM("   li           t0, 1                 \n"
+               "1: amoswap.d.aq t0, t0, (%4)           \n"
+               "   bnez         t0, 1b                 \n"
+               "   lr.d         %0, (%1)               \n"
+               "   bne          %0, %2, 2f             \n"
+               "   sc.d         t3, %3, (%1)           \n"
+               "   bnez         t3, 1b                 \n"
+               "2: amoswap.d.rl x0, x0, (%4)           \n" : "=&r"(old) : "r"(&value), "r"(compare), "r"(replacement), "r"(&cas_lock) : "t0", "t3", "cc", "memory");
+        }
+
         return old;
     }
+
 
     // template <typename T>
     // static T cas(volatile T & value, T compare, T replacement) {
