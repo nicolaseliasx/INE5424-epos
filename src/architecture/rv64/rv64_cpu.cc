@@ -5,8 +5,6 @@
 
 __BEGIN_SYS
 
-volatile long CPU::cas_lock = 0;
-
 unsigned int CPU::_cpu_clock;
 unsigned int CPU::_bus_clock;
 

@@ -102,9 +102,11 @@ private:
     System_Info * si;
     MMU mmu;
     static volatile bool _paging_ready;
+    static volatile bool _bss_ready;
 };
 
 volatile bool Setup::_paging_ready = false;
+volatile bool _bss_ready = false;
 
 Setup::Setup()
 {
@@ -710,8 +712,11 @@ void _entry() // machine mode
     CPU::tp(CPU::mhartid() - 1);                        // tp will be CPU::id() for supervisor mode; we won't count core 0, which is an heterogeneous E51
     CPU::sp(Memory_Map::BOOT_STACK + Traits<Machine>::STACK_SIZE * (CPU::id() + 1) - sizeof(long)); // set the stack pointer, thus creating a stack for SETUP - Adjusted for multicores
     
-    if(CPU::id() == CPU::BSP)
+    if(CPU::id() == CPU::BSP) {
         Machine::clear_bss();
+        _bss_ready = true;
+    } else
+        while (!_bss_ready);
 
     if(Traits<Machine>::supervisor) {
         CPU::mtvec(CPU::INT_DIRECT, Memory_Map::INT_M2S);   // setup a machine mode interrupt handler to forward timer interrupts (which cannot be delegated via mideleg)

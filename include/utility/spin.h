@@ -13,12 +13,12 @@ __BEGIN_UTIL
 class Spin
 {
 public:
-    Spin(): _level(0), _owner(0) {}
+    Spin(): _level(0), _owner(0), _lock(0) {}
 
     void acquire() {
         unsigned long me = _running();
 
-        while(CPU::cas(_owner, 0UL, me) != me);
+        while(CPU::cas(_owner, _lock, 0UL, me) != me);
         _level++;
 
         db<Spin>(TRC) << "Spin::acquire[this=" << this << ",id=" << hex << me << "]() => {owner=" << _owner << dec << ",level=" << _level << "}" << endl;
