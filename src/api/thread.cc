@@ -393,6 +393,7 @@ void Thread::reschedule(unsigned int cpu)
     if(!mp || (cpu == CPU::id()))
         reschedule();
     else {
+        cout << "IPI - Thread::reschedule(cpu=" << cpu << ")" << endl;
         db<Thread>(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
         IC::ipi(cpu, IC::INT_RESCHEDULER);
     }

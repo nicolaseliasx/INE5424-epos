@@ -21,10 +21,6 @@ template<> struct Traits<Build>: public Traits_Tokens
     static const bool enabled = true;
     static const bool debugged = true;
     static const bool hysterically_debugged = false;
-
-    // TENTAR SETAR ISSO COM BASE NO CRITERION
-    // Flag for circle distribution of threads in multilist
-    static const bool CIRCLE_QUEUE = false;
 };
 
 
@@ -106,6 +102,10 @@ template<> struct Traits<System>: public Traits<Build>
     static const bool multiheap = Traits<Scratchpad>::enabled;
     static const bool multicore = multithread && (CPUS > 1);
 
+    // ATTENTION -> You need to define here which type of queue your criteria uses to correctly distribute threads in a 
+    // single queue (all schedulers with suffix G and without G) and multiqueue (suffix P only)
+    static const bool PARTITIONED_QUEUE = true;
+
     static const unsigned long LIFE_SPAN = 1 * YEAR; // s
     static const unsigned int DUTY_CYCLE = 1000000; // ppm
 
@@ -122,9 +122,8 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool simulate_capacity = false;
     static const int priority_inversion_protocol = NA;
     static const int mp = Traits<System>::multicore;
-    // TODO: Criar um trais que decide qual o tipo de list que usa criando um enum entre Multiheadlist e Multilist BASEADO NO CRITERION
 
-    typedef GLLF Criterion;
+    typedef PLLF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 

@@ -125,9 +125,8 @@ public:
 
     static void init() {}
 
-    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
+    // Default values for Global scheduler implementations
     static unsigned int current_head() { return CPU::id(); }
-
     static unsigned int current_queue() { return 0; }
 
 protected:
@@ -142,10 +141,10 @@ class Priority: public Scheduling_Criterion_Common
     friend class _SYS::RT_Thread;
 
 public:
-    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
     template <typename ... Tn>
-    Priority(int p = NORMAL, bool CIRCLE_QUEUE = Traits<System>::CIRCLE_QUEUE ? true : false, Tn & ... an): _priority(p) {
-        if (CIRCLE_QUEUE) {
+    Priority(int p = NORMAL, Tn & ... an): _priority(p) {
+        // The default of all scheduler uses the same queue, except those with suffix P, YOU NEED CHOSE THIS INS TRAITS OF APPLICATION
+        if (Traits<System>::PARTITIONED_QUEUE) {
             if (_priority == IDLE || _priority == MAIN) {
                 _queue = CPU::id();
             } else {
@@ -163,12 +162,13 @@ public:
 
     operator const volatile int() const volatile { return _priority; }
 
+protected:
+    volatile int _priority;
+
+private:
     volatile unsigned int _queue;
     static volatile unsigned int _next_queue;
     static Simple_Spin _lock;
-
-protected:
-    volatile int _priority;
 };
 
 // Round-Robin
@@ -293,7 +293,6 @@ public:
     GLLF(int p = APERIODIC): LLF(p) {}
     GLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c) {}
 
-    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
     static unsigned int current_head() { return CPU::id(); }
 
     static unsigned int current_queue() { return 0; }
@@ -308,15 +307,12 @@ public:
     PLLF(int p = APERIODIC): LLF(p) {}
     PLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c) {}
 
-    // TODO: ORGANIZAR ESSAS VARIAVEIS DE FORMA COESA
-    // For multihead list identifiers
     static unsigned int current_head() { return 0; }
 
-    // For multilist identifiers
     static unsigned int current_queue() { return CPU::id(); }
 
-    static const unsigned int QUEUES = Traits<System>::CPUS; // For multilists
-    static const unsigned int HEADS = 1; // For multihead lists
+    static const unsigned int QUEUES = Traits<System>::CPUS;
+    static const unsigned int HEADS = 1;
 };
 
 // TODO: CRIAR TESTE PARA TODAS ESSAS CLASSES
