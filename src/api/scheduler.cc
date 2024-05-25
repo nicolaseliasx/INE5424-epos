@@ -40,6 +40,7 @@ void Real_Time_Scheduler_Common::collect(Event event) {
 
         _statistics.thread_last_preemption = elapsed();
         _statistics.thread_execution_time += cpu_time;
+        _statistics.execution_per_cpu[CPU::id()] += cpu_time;
         _statistics.job_utilization += cpu_time;
     }
     if(periodic() && (event & JOB_RELEASE)) {
