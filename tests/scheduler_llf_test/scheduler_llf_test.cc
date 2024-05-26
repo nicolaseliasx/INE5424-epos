@@ -21,6 +21,9 @@ int func_c();
 OStream cout;
 Chronometer chrono;
 
+Semaphore meu_lock;
+volatile unsigned int eu_deveria_ser_um = 0;
+
 Periodic_Thread * thread_a;
 Periodic_Thread * thread_b;
 Periodic_Thread * thread_c;
@@ -127,6 +130,10 @@ int func_a()
     } while (Periodic_Thread::wait_next());
 
     exec('A');
+
+    meu_lock.p();
+    eu_deveria_ser_um += 1;
+    meu_lock.v();
 
     return 'A';
 }

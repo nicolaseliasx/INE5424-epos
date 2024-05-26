@@ -14,6 +14,9 @@ const Milisecond wcet_a = 50;
 const Milisecond wcet_b = 20;
 const Milisecond wcet_c = 10;
 
+Semaphore meu_lock;
+volatile unsigned int eu_deveria_ser_um = 0;
+
 int func_a();
 int func_b();
 int func_c();
@@ -90,6 +93,11 @@ int main()
     thread_b = new Periodic_Thread(RTConf(period_b * 1000, 0, wcet_b * 1000, 0, iterations), &func_b);
     thread_c = new Periodic_Thread(RTConf(period_c * 1000, 0, wcet_c * 1000, 0, iterations), &func_c);
 
+    cout << "This is a GLLF test. This is the GLLF queue. Its supossed to have " << Traits<System>::CPUS << " heads and 1 queue" << endl;
+    
+    cout << "\nThread A is in queue \"" << thread_a->criterion().queue() << "\nThread B is in queue: " << thread_b->criterion().queue() << "\nThread C is in queue \"" << thread_c->criterion().queue() << endl;
+
+
     exec('M');
 
     chrono.reset();
@@ -108,11 +116,21 @@ int main()
          << "\", thread B exited with status \"" << char(status_b)
          << "\" and thread C exited with status \"" << char(status_c) << "." << endl;
 
-    cout << "\nThe estimated time to run the test was "
-         << "A " << period_a* iterations << " B " << period_b* iterations << " C " << period_c * iterations
-         << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
+    cout << "\nThread A time in total: " << thread_a->criterion().statistics().thread_execution_time << " all cores: " << endl;
+    for (unsigned int i = 0; i < CPU::cores(); i ++)
+        cout << "\n In Core " << i << " : " << thread_a->criterion().statistics().execution_per_cpu[i] << endl;
+
+    cout << "\nThread B time in total: " << thread_b->criterion().statistics().thread_execution_time << " all cores: " << endl;
+    for (unsigned int i = 0; i < CPU::cores(); i ++)
+        cout << "\n In Core " << i << " : " << thread_b->criterion().statistics().execution_per_cpu[i] << endl;
+
+    cout << "\nThread C time in total: " << thread_c->criterion().statistics().thread_execution_time << " all cores: " << endl;
+    for (unsigned int i = 0; i < CPU::cores(); i ++)
+        cout << "\n In Core " << i << " : " << thread_c->criterion().statistics().execution_per_cpu[i] << endl;
 
     cout << "I'm also done, bye!" << endl;
+
+    cout << "Eu sou: " << eu_deveria_ser_um << ", eu deveria ser: " << iterations << endl;
 
     return 0;
 }
@@ -124,6 +142,9 @@ int func_a()
 
     do {
         exec('a', wcet_a);
+        meu_lock.p();
+        eu_deveria_ser_um += 1;
+        meu_lock.v();
     } while (Periodic_Thread::wait_next());
 
     exec('A');

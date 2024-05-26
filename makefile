@@ -168,17 +168,6 @@ build_ceiling_test:
 run_ceiling_test_only:
 		$(MAKE) APPLICATION=ceiling_test run1
 
-run_multicore_test: link_multicore_test build_multicore_test run_multicore_test_only
-
-link_multicore_test:
-		$(LINK) $(TST)/multicore_test $(APP);
-
-build_multicore_test:
-		$(MAKE) APPLICATION=multicore_test clean1 all1
-
-run_multicore_test_only:
-		$(MAKE) APPLICATION=multicore_test run1
-
 run_inheritance_test: link_inheritance_test build_inheritance_test run_inheritance_test_only
 
 link_inheritance_test:
@@ -189,6 +178,39 @@ build_inheritance_test:
 
 run_inheritance_test_only:
 		$(MAKE) APPLICATION=inheritance_test run1
+
+run_scheduler_gllf_test: link_scheduler_gllf_test build_scheduler_gllf_test run_scheduler_gllf_test_only
+
+link_scheduler_gllf_test:
+		$(LINK) $(TST)/scheduler_gllf_test $(APP);
+
+build_scheduler_gllf_test:
+		$(MAKE) APPLICATION=scheduler_gllf_test clean1 all1
+
+run_scheduler_gllf_test_only:
+		$(MAKE) APPLICATION=scheduler_gllf_test run1
+
+run_scheduler_pllf_test: link_scheduler_pllf_test build_scheduler_pllf_test run_scheduler_pllf_test_only
+
+link_scheduler_pllf_test:
+		$(LINK) $(TST)/scheduler_pllf_test $(APP);
+
+build_scheduler_pllf_test:
+		$(MAKE) APPLICATION=scheduler_pllf_test clean1 all1
+
+run_scheduler_pllf_test_only:
+		$(MAKE) APPLICATION=scheduler_pllf_test run1
+
+run_amo_cpu_test: link_amo_cpu_test build_amo_cpu_test run_amo_cpu_test_only
+
+link_amo_cpu_test:
+		$(LINK) $(TST)/amo_cpu_test $(APP);
+
+build_amo_cpu_test:
+		$(MAKE) APPLICATION=amo_cpu_test clean1 all1
+
+run_amo_cpu_test_only:
+		$(MAKE) APPLICATION=amo_cpu_test run1
 
 .PHONY: prebuild_$(APPLICATION) posbuild_$(APPLICATION) prerun_$(APPLICATION)
 prebuild_$(APPLICATION):

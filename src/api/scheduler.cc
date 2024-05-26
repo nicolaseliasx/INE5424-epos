@@ -40,6 +40,9 @@ void Real_Time_Scheduler_Common::collect(Event event) {
 
         _statistics.thread_last_preemption = elapsed();
         _statistics.thread_execution_time += cpu_time;
+        // Para PLLF, quando a coleta acontece em uma CPU diferente de 0, é coletado a CPU 0 sempre.
+        // Testamos a quantidade de iterações nos testes, e confirmamos que a thread executa o número
+        // de iterações corretamente
         _statistics.execution_per_cpu[CPU::id()] += cpu_time_on_core;
         _statistics.job_utilization += cpu_time;
     }

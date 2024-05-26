@@ -13,7 +13,7 @@ template<> struct Traits<Build>: public Traits_Tokens
     static const unsigned int ARCHITECTURE = RV64;
     static const unsigned int MACHINE = RISCV;
     static const unsigned int MODEL = SiFive_U;
-    static const unsigned int CPUS = 1;
+    static const unsigned int CPUS = 4;
     static const unsigned int NETWORKING = STANDALONE;
     static const unsigned int EXPECTED_SIMULATION_TIME = 60; // s (0 => not simulated)
 
@@ -105,7 +105,7 @@ template<> struct Traits<System>: public Traits<Build>
 
     // ATTENTION -> You need to define here which type of queue your criteria uses to correctly distribute threads in a 
     // single queue (all schedulers with suffix G and without G) and multiqueue (suffix P only)
-    static const bool PARTITIONED_QUEUE = false;
+    static const bool PARTITIONED_QUEUE = true;
 
     static const unsigned long LIFE_SPAN = 1 * YEAR; // s
     static const unsigned int DUTY_CYCLE = 1000000; // ppm
@@ -121,10 +121,10 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool enabled = Traits<System>::multithread;
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
-    static const int priority_inversion_protocol = NA;
+    static const int priority_inversion_protocol = CEILING;
     static const int mp = Traits<System>::multicore;
 
-    typedef LLF Criterion;
+    typedef GLLF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 
