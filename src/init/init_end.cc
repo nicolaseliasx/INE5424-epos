@@ -24,7 +24,6 @@ public:
             return;
         }
 
-        // So this used even in machine mode because there is a MMU class called no-mmu? 
         // Since we still need to free up the boot stack used, lets keep it here
         if(CPU::id() == CPU::BSP && Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
             MMU::free(Memory_Map::BOOT_STACK, MMU::pages(Traits<Machine>::STACK_SIZE));

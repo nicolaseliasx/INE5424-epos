@@ -44,8 +44,12 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
 
     criterion().collect(Criterion::CREATE);
 
-    if(preemptive && (_state == READY) && (_link.rank() != IDLE))
-        reschedule(_link.rank().queue());
+    if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
+        if (partitioned) {
+            reschedule(_link.rank().queue());
+        }  else 
+            reschedule_all();
+    }
 
     unlock();
 }
@@ -110,8 +114,12 @@ void Thread::priority(const Criterion & c)
     } else
         _link.rank(Criterion(c));
 
-    if(preemptive)
-        reschedule(this->_link.rank().queue());
+    if(preemptive) {
+        if (partitioned) 
+            reschedule(this->_link.rank().queue());
+        else
+            reschedule_all();
+    }
 
     unlock();
 }
@@ -192,8 +200,12 @@ void Thread::resume()
         _state = READY;
         _scheduler.resume(this);
 
-        if(preemptive)
-            reschedule(_link.rank().queue());
+        if(preemptive) {
+            if (partitioned)
+                reschedule(_link.rank().queue());
+            else
+                reschedule_all();
+        }
     } else
         db<Thread>(WRN) << "Resume called for unsuspended object!" << endl;
 
@@ -247,8 +259,7 @@ void Thread::exit(int status)
 void Thread::sleep(Queue * q)
 {
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
-    // alguns sleep() bugam se não estiverem com lock()
-    // pode ser mais de um da oprobklea m sei la
+    
     assert(locked()); // locking handled by caller
 
     Thread * prev = running();
@@ -274,8 +285,12 @@ void Thread::wakeup(Queue * q)
         t->_waiting = 0;
         _scheduler.resume(t);
 
-        if(preemptive)
-            reschedule(t->_link.rank().queue());
+        if(preemptive) {
+            if (partitioned)
+                reschedule(t->_link.rank().queue());
+            else
+                reschedule_all();
+        }
     }
 }
 
@@ -287,20 +302,16 @@ void Thread::wakeup_all(Queue * q)
     assert(locked()); // locking handled by caller
 
     if(!q->empty()) {
-        assert(Criterion::QUEUES <= sizeof(unsigned long) * 8);
-        unsigned long cpus = Traits<System>::CPUS;
+        assert(Criterion::QUEUES <= 4);
         while(!q->empty()) {
             Thread * t = q->remove()->object();
             t->_state = READY;
             t->_waiting = 0;
             _scheduler.resume(t);
-            cpus |= 1 << t->_link.rank().queue();
         }
 
         if(preemptive) {
-            for(unsigned long i = 0; i < Criterion::QUEUES; i++)
-                if(cpus & (1 << i))
-                    reschedule(i);
+            reschedule_all();
         }
     }
 }
@@ -331,10 +342,10 @@ void Thread::prioritize(Queue * q)
             } else
                 owner->_link.rank(c);
 
-            // TODO: Precisa reavaliar isso aqui pro GLLF?
-            if(mp && owner->criterion().queue() != CPU::id()) {
-                reschedule(owner->criterion().queue());
-            }
+            if (partitioned) {
+                reschedule(owner->_link.rank().queue());
+            }  else 
+                reschedule_all();
         }
     }
 }
@@ -350,7 +361,7 @@ void Thread::deprioritize(Queue * q)
     db<Thread>(TRC) << "Thread::deprioritize(q=" << q << ") [running=" << running() << "]" << endl;
     for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
         auto owner = i->object();
-        // Deveria ser um list de criterions para não perder as estatisticas, mais detalhes encima dessa classe
+        // Deveria ser um list de criterions para não perder as estatisticas, mais detalhes em cima dessa classe
         Criterion c = Criterion(owner->_natural_priority.pop());
         if(c != -1) {
             if(owner->_state == READY) {
@@ -363,14 +374,19 @@ void Thread::deprioritize(Queue * q)
                 owner->_waiting->insert(&owner->_link);
             } else
                 owner->_link.rank(c);
-            // TODO: Precisa reavaliar isso aqui pro GLLF?
-            if(mp && owner->criterion().queue() != CPU::id()) {
-                reschedule(owner->criterion().queue());
-            }
+            
+            if (partitioned) {
+                reschedule(owner->_link.rank().queue());
+            }  else 
+                reschedule_all();
         }
     }
 }
 
+void Thread::reschedule_all() {
+    for (unsigned int i = 0; i < CPU::cores(); i++)
+        reschedule(i);
+}
 
 void Thread::reschedule()
 {
@@ -434,13 +450,15 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // parameters on the stack anyway).
         if(mp)
             _spin.release();
+            
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
 
+        // O dispatch era para estar locked (by caller), em alguns cenários isso não acontece, e as interrupções continuam
+        // ativas e causam deadlock por conta de interrupções
         if(mp)
             lock();
     }
 }
- // Alguns syncronizers precisam de lock() para usar o CPU::int_disable(); e funcinar corretamente
 
 int Thread::idle()
 {

@@ -282,6 +282,8 @@ public:
     static const bool timed = true;
     static const bool dynamic = true;
     static const bool preemptive = true;
+    static const bool partitioned = false;
+    
 
 public:
     LLF(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
@@ -294,6 +296,9 @@ public:
 class GLLF: public LLF
 {
 public:
+    // ajustar visibilidade
+    static const bool partitioned = false;
+
     GLLF(int p = APERIODIC): LLF(p) {}
     GLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c) {}
 
@@ -308,8 +313,14 @@ public:
 class PLLF: public LLF, public Variable_Queue_Scheduler
 {
 public:
-    PLLF(int p = APERIODIC): LLF(p), Variable_Queue_Scheduler(CPU::id()) {}
-    PLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c), Variable_Queue_Scheduler(((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : ++_next_queue %= CPU::cores()) {}
+    static const bool partitioned = true;
+
+    PLLF(int p = APERIODIC): LLF(p), Variable_Queue_Scheduler(
+        ((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : ++_next_queue %= CPU::cores()
+    ) {}
+    PLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c), Variable_Queue_Scheduler(
+        ((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : ++_next_queue %= CPU::cores()
+    ) {}
 
     static unsigned int current_head() { return 0; }
 

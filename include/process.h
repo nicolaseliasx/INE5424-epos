@@ -26,6 +26,8 @@ class Thread
 
 protected:
     static const bool preemptive = Traits<Thread>::Criterion::preemptive;
+    static const bool partitioned = Traits<Thread>::Criterion::partitioned;
+
     static const bool reboot = Traits<System>::reboot;
     static const int priority_inversion_protocol = Traits<Thread>::priority_inversion_protocol;
 
@@ -91,7 +93,6 @@ public:
                 i->object()->criterion().collect(Criterion::UPDATE);
             }
         }
-        // TODO: sinalizar core apenas quando nao for multilist
     }
 
     int join();
@@ -136,6 +137,7 @@ protected:
     static void prioritize(Queue * queue);
     static void deprioritize(Queue * queue);
 
+    static void reschedule_all();
     static void reschedule();
     static void reschedule(unsigned int cpu);
     static void rescheduler(IC::Interrupt_Id interrupt);    
