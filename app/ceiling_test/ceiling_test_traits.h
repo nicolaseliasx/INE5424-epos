@@ -19,7 +19,6 @@ template<> struct Traits<Build>: public Traits_Tokens
 
     // Default flags
     static const bool enabled = true;
-    static const bool monitored = true;
     static const bool debugged = true;
     static const bool hysterically_debugged = false;
 };
@@ -103,10 +102,6 @@ template<> struct Traits<System>: public Traits<Build>
     static const bool multiheap = Traits<Scratchpad>::enabled;
     static const bool multicore = multithread && (CPUS > 1);
 
-    // ATTENTION -> You need to define here which type of queue your criteria uses to correctly distribute threads in a 
-    // single queue (all schedulers with suffix G and without G) and multiqueue (suffix P only)
-    static const bool PARTITIONED_QUEUE = true;
-
     static const unsigned long LIFE_SPAN = 1 * YEAR; // s
     static const unsigned int DUTY_CYCLE = 1000000; // ppm
 
@@ -121,10 +116,10 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool enabled = Traits<System>::multithread;
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
-    static const int priority_inversion_protocol = INHERITANCE;
+    static const int priority_inversion_protocol = CEILING;
     static const int mp = Traits<System>::multicore;
 
-    typedef PLLF Criterion;
+    typedef GLLF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 

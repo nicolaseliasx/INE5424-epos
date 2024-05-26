@@ -30,15 +30,17 @@ void Real_Time_Scheduler_Common::collect(Event event) {
         db<Thread>(TRC) << "ENTER";
 
         _statistics.thread_last_dispatch = elapsed();
+        _statistics.thread_last_dispatch_on_core[CPU::id()] = elapsed();
     }
     if(event & LEAVE) {
         Tick cpu_time = elapsed() - _statistics.thread_last_dispatch;
+        Tick cpu_time_on_core = elapsed() - _statistics.thread_last_dispatch_on_core[CPU::id()];
 
         db<Thread>(TRC) << "LEAVE";
 
         _statistics.thread_last_preemption = elapsed();
         _statistics.thread_execution_time += cpu_time;
-        _statistics.execution_per_cpu[CPU::id()] += cpu_time;
+        _statistics.execution_per_cpu[CPU::id()] += cpu_time_on_core;
         _statistics.job_utilization += cpu_time;
     }
     if(periodic() && (event & JOB_RELEASE)) {

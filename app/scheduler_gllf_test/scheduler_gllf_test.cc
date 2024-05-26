@@ -14,15 +14,15 @@ const Milisecond wcet_a = 50;
 const Milisecond wcet_b = 20;
 const Milisecond wcet_c = 10;
 
+Semaphore meu_lock;
+volatile unsigned int eu_deveria_ser_um = 0;
+
 int func_a();
 int func_b();
 int func_c();
 
 OStream cout;
 Chronometer chrono;
-
-Semaphore meu_lock;
-volatile unsigned int eu_deveria_ser_um = 0;
 
 Periodic_Thread * thread_a;
 Periodic_Thread * thread_b;
@@ -93,9 +93,10 @@ int main()
     thread_b = new Periodic_Thread(RTConf(period_b * 1000, 0, wcet_b * 1000, 0, iterations), &func_b);
     thread_c = new Periodic_Thread(RTConf(period_c * 1000, 0, wcet_c * 1000, 0, iterations), &func_c);
 
-    cout << "This is a PLLF test. This is the PLLF queues. Its supossed to have " << Traits<System>::CPUS << " queues and 1 head to each" << endl;
+    cout << "This is a GLLF test. This is the GLLF queue. Its supossed to have " << Traits<System>::CPUS << " heads and 1 queue" << endl;
     
-    // cout << "Thread A is in queue: " << thread_a->criterion().queue() << " Thread B is in queue: " << thread_b->criterion().queue() << " Thread C is in queue: " << thread_c->criterion().queue() << endl;
+    cout << "\nThread A is in queue \"" << thread_a->criterion().queue() << "\nThread B is in queue: " << thread_b->criterion().queue() << "\nThread C is in queue \"" << thread_c->criterion().queue() << endl;
+
 
     exec('M');
 
@@ -126,10 +127,6 @@ int main()
     cout << "\nThread C time in total: " << thread_c->criterion().statistics().thread_execution_time << " all cores: " << endl;
     for (unsigned int i = 0; i < CPU::cores(); i ++)
         cout << "\n In Core " << i << " : " << thread_c->criterion().statistics().execution_per_cpu[i] << endl;
-
-    cout << "\nThe estimated time to run the test was "
-         << "A " << period_a* iterations << " B " << period_b* iterations << " C " << period_c * iterations
-         << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
 
     cout << "I'm also done, bye!" << endl;
 

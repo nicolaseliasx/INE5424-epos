@@ -94,6 +94,7 @@ public:
         Tick thread_destruction;                // tick in which the thread was destroyed
         Tick thread_execution_time;             // accumulated execution time (in ticks)
         Tick thread_last_dispatch;              // tick in which the thread was last dispatched to the CPU
+        Tick thread_last_dispatch_on_core[Traits<System>::CPUS];
         Tick thread_last_preemption;            // tick in which the thread left the CPU by the last time
 
         // Job related statistics
@@ -107,6 +108,7 @@ public:
 
         // CPU related statistics
         Tick execution_per_cpu[Traits<System>::CPUS]; // Accumulated execution time PER CPU
+        
     };
 
 protected:
