@@ -133,6 +133,21 @@ protected:
     Statistics _statistics;
 };
 
+// Tentamos implementar essa logica diretamente no Priority, porem por algum motivo as queues não ficavam de forma circular
+// Ultilizamos a solucao do EPOS referencia para implementar a logica de queues
+class Variable_Queue_Scheduler
+{
+protected:
+    Variable_Queue_Scheduler(unsigned int queue): _queue(queue) {};
+
+    const volatile unsigned int & queue() const volatile { return _queue; }
+    void queue(unsigned int q) { _queue = q; }
+
+protected:
+    volatile unsigned int _queue;
+    static volatile unsigned int _next_queue;
+};
+
 // Priority (static and dynamic)
 class Priority: public Scheduling_Criterion_Common
 {
@@ -143,19 +158,7 @@ class Priority: public Scheduling_Criterion_Common
 public:
     template <typename ... Tn>
     Priority(int p = NORMAL, Tn & ... an): _priority(p) {
-        // The default of all scheduler uses the same queue, except those with suffix P, YOU NEED CHOSE THIS INS TRAITS OF APPLICATION
-        if (Traits<System>::PARTITIONED_QUEUE) {
-            if (_priority == IDLE || _priority == MAIN) {
-                _queue = CPU::id();
-            } else {
-                _lock.acquire();
-                _queue = _next_queue;
-                _next_queue = (_next_queue + 1) % CPU::cores();
-                _lock.release();
-            }
-        } else {
-            _queue = 0;
-        }
+        _queue = 0;
     }
 
     const volatile unsigned int & queue() const volatile { return _queue; }
@@ -167,8 +170,6 @@ protected:
 
 private:
     volatile unsigned int _queue;
-    static volatile unsigned int _next_queue;
-    static Simple_Spin _lock;
 };
 
 // Round-Robin
@@ -301,21 +302,21 @@ public:
     static const unsigned int HEADS = Traits<System>::CPUS;
 };
 
-class PLLF: public LLF
+class PLLF: public LLF, public Variable_Queue_Scheduler
 {
 public:
-    PLLF(int p = APERIODIC): LLF(p) {}
-    PLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c) {}
+    PLLF(int p = APERIODIC): LLF(p), Variable_Queue_Scheduler(CPU::id()) {}
+    PLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c), Variable_Queue_Scheduler(((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : ++_next_queue %= CPU::cores()) {}
 
     static unsigned int current_head() { return 0; }
 
     static unsigned int current_queue() { return CPU::id(); }
 
+    using Variable_Queue_Scheduler::queue;
+
     static const unsigned int QUEUES = Traits<System>::CPUS;
     static const unsigned int HEADS = 1;
 };
-
-// TODO: CRIAR TESTE PARA TODAS ESSAS CLASSES
 
 __END_SYS
 
