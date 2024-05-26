@@ -104,6 +104,9 @@ public:
         Tick job_utilization;                   // accumulated execution time (in ticks)
         unsigned int jobs_released;             // number of jobs of a thread that were released so far (i.e. the number of times _alarm->v() was called by the Alarm::handler())
         unsigned int jobs_finished;             // number of jobs of a thread that finished execution so far (i.e. the number of times alarm->p() was called at wait_next())
+
+        // CPU related statistics
+        Tick execution_per_cpu[Traits<System>::CPUS]; // Accumulated execution time PER CPU
     };
 
 protected:
