@@ -137,7 +137,7 @@ protected:
     static void prioritize(Queue * queue);
     static void deprioritize(Queue * queue);
 
-    static void reschedule_all();
+    static void reschedule_someone();
     static void reschedule();
     static void reschedule(unsigned int cpu);
     static void rescheduler(IC::Interrupt_Id interrupt);    
@@ -164,6 +164,7 @@ protected:
     static Scheduler_Timer * _timer;
     static Scheduler<Thread> _scheduler;
     static Spin _spin;
+    static volatile unsigned int _next_cpu;
 };
 
 

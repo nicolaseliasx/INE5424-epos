@@ -14,6 +14,7 @@ volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
 Spin Thread::_spin;
+volatile unsigned int Thread::_next_cpu = 0;
 
 void Thread::constructor_prologue(unsigned int stack_size)
 {
@@ -47,8 +48,8 @@ void Thread::constructor_epilogue(Log_Addr entry, unsigned int stack_size)
     if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
         if (partitioned) {
             reschedule(_link.rank().queue());
-        }  else 
-            reschedule_all();
+        } else
+            reschedule_someone();
     }
 
     unlock();
@@ -118,7 +119,7 @@ void Thread::priority(const Criterion & c)
         if (partitioned) 
             reschedule(this->_link.rank().queue());
         else
-            reschedule_all();
+            reschedule_someone();
     }
 
     unlock();
@@ -204,7 +205,7 @@ void Thread::resume()
             if (partitioned)
                 reschedule(_link.rank().queue());
             else
-                reschedule_all();
+                reschedule_someone();
         }
     } else
         db<Thread>(WRN) << "Resume called for unsuspended object!" << endl;
@@ -289,7 +290,7 @@ void Thread::wakeup(Queue * q)
             if (partitioned)
                 reschedule(t->_link.rank().queue());
             else
-                reschedule_all();
+                reschedule_someone();
         }
     }
 }
@@ -311,7 +312,8 @@ void Thread::wakeup_all(Queue * q)
         }
 
         if(preemptive) {
-            reschedule_all();
+            for (unsigned int i = 0; i < CPU::cores(); i++)
+                reschedule(i);
         }
     }
 }
@@ -343,8 +345,8 @@ void Thread::prioritize(Queue * q)
 
             if (partitioned) {
                 reschedule(owner->_link.rank().queue());
-            }  else 
-                reschedule_all();
+            } else 
+                reschedule_someone();
         }
     }
 }
@@ -374,16 +376,18 @@ void Thread::deprioritize(Queue * q)
             
             if (partitioned) {
                 reschedule(owner->_link.rank().queue());
-            }  else 
-                reschedule_all();
+            } else
+                reschedule_someone();
         }
     }
 }
 
-void Thread::reschedule_all() {
-    for (unsigned int i = 0; i < CPU::cores(); i++)
-        reschedule(i);
+
+void Thread::reschedule_someone() {
+    reschedule(_next_cpu);
+    ++_next_cpu %= CPU::cores();
 }
+
 
 void Thread::reschedule()
 {
@@ -401,7 +405,7 @@ void Thread::reschedule()
 
 void Thread::reschedule(unsigned int cpu)
 {
-    assert(locked()); // locking handled by caller
+    // assert(locked()); // locking handled by caller
 
     if(!mp || (cpu == CPU::id()))
         reschedule();
