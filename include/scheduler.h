@@ -160,9 +160,7 @@ class Priority: public Scheduling_Criterion_Common
 
 public:
     template <typename ... Tn>
-    Priority(int p = NORMAL, Tn & ... an): _priority(p) {
-        _queue = 0;
-    }
+    Priority(int p = NORMAL, Tn & ... an): _priority(p) { _queue = 0; }
 
     const volatile unsigned int & queue() const volatile { return _queue; }
 
@@ -182,6 +180,7 @@ public:
     static const bool timed = true;
     static const bool dynamic = false;
     static const bool preemptive = true;
+    static const bool partitioned = false;
 
 public:
     template <typename ... Tn>
@@ -195,6 +194,7 @@ public:
     static const bool timed = false;
     static const bool dynamic = false;
     static const bool preemptive = false;
+    static const bool partitioned = false;
 
 public:
     template <typename ... Tn>
@@ -238,6 +238,7 @@ public:
     static const bool timed = false;
     static const bool dynamic = false;
     static const bool preemptive = true;
+    static const bool partitioned = false;
 
 public:
     RM(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
@@ -252,6 +253,7 @@ public:
     static const bool timed = false;
     static const bool dynamic = false;
     static const bool preemptive = true;
+    static const bool partitioned = false;
 
 public:
     DM(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
@@ -266,6 +268,7 @@ public:
     static const bool timed = true;
     static const bool dynamic = true;
     static const bool preemptive = true;
+    static const bool partitioned = false;
 
 public:
     EDF(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
@@ -296,9 +299,9 @@ public:
 class GLLF: public LLF
 {
 public:
-    // ajustar visibilidade
     static const bool partitioned = false;
 
+public:
     GLLF(int p = APERIODIC): LLF(p) {}
     GLLF(Microsecond p, Microsecond d = SAME, Microsecond c = UNKNOWN) : LLF(p, d, c) {}
 
@@ -310,11 +313,13 @@ public:
     static const unsigned int HEADS = Traits<System>::CPUS;
 };
 
+// Partitioned Least Laxity First
 class PLLF: public LLF, public Variable_Queue_Scheduler
 {
 public:
     static const bool partitioned = true;
 
+public:
     PLLF(int p = APERIODIC): LLF(p), Variable_Queue_Scheduler(
         ((_priority == IDLE) || (_priority == MAIN)) ? CPU::id() : ++_next_queue %= CPU::cores()
     ) {}

@@ -8,7 +8,7 @@ extern "C" { volatile unsigned long _running() __attribute__ ((alias ("_ZN4EPOS1
 
 __BEGIN_SYS
 OStream cout;
-// TODO: Precisa reavaliar isso aqui pro GLLF?
+
 bool Thread::_not_booting;
 volatile unsigned int Thread::_thread_count;
 Scheduler_Timer * Thread::_timer;
@@ -20,7 +20,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
 
     _thread_count++;
-    cout << "Thread queue() = " << this->criterion().queue() << endl;
+    db<Thread>(TRC) << "Thread::constructor_prologue( "  << "Thread queue() = " << this->criterion().queue() << " )"<< endl;
     _scheduler.insert(this);
 
     _stack = new (SYSTEM) char[stack_size];
@@ -259,7 +259,7 @@ void Thread::exit(int status)
 void Thread::sleep(Queue * q)
 {
     db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
-    
+
     assert(locked()); // locking handled by caller
 
     Thread * prev = running();
@@ -317,7 +317,6 @@ void Thread::wakeup_all(Queue * q)
 }
 
 
-// Same thing as priority. This needs to be multicore aware using signaling
 void Thread::prioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
@@ -351,7 +350,6 @@ void Thread::prioritize(Queue * q)
 }
 
 
-// This guy needs to be multicore aware as well!
 void Thread::deprioritize(Queue * q)
 {
     assert(locked()); // locking handled by caller
@@ -361,7 +359,6 @@ void Thread::deprioritize(Queue * q)
     db<Thread>(TRC) << "Thread::deprioritize(q=" << q << ") [running=" << running() << "]" << endl;
     for(Queue::Iterator i = q->begin(); i != q->end(); ++i) {
         auto owner = i->object();
-        // Deveria ser um list de criterions para não perder as estatisticas, mais detalhes em cima dessa classe
         Criterion c = Criterion(owner->_natural_priority.pop());
         if(c != -1) {
             if(owner->_state == READY) {
