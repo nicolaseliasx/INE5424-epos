@@ -1,3 +1,5 @@
+# INE5424 - Sistemas Operacionais II - EPOS RISC-V LLF MULTICORE - Universidade Federal de Santa Catarina
+
 # EPOS
 
 The [Embedded Parallel Operating System (EPOS)](https://epos.lisha.ufsc.br) project aims at automating the development of embedded systems so that developers can concentrate on what really matters: their applications. EPOS relies on the Application-Driven Embedded System Design (ADESD) method to guide the development of both software and hardware components that can be automatically adapted to fulfill the requirements of particular applications. EPOS features a set of tools to support developers in selecting, configuring, and plugging components into its application-specific framework. The combination of methodology, components, frameworks, and tools enable the automatic generation of an application-specific embedded system instances. 
