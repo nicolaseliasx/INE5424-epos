@@ -53,8 +53,8 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 ## Authors
 
 * **Antônio Augusto Fröhlich** - *Initial work* - [Guto](https://lisha.ufsc.br/Guto)
-* **Nicolas Elias** - *LLFs, PRIORITY INVERSION and MULTICORE SETUP* - [GITHUB](https://github.com/nicolaseliasxyz)
-* **Arthur Winck** - *LLFs, PRIORITY INVERSION and MULTICORE SETUP* - [GITHUB](https://github.com/arthurwinck)
+* **Nicolas Elias** - *LLFs, PRIORITY INVERSION PROTOCOLS, RISC-V AMO ATOMIC OPERATIONs and MULTICORE SETUP* - [GITHUB](https://github.com/nicolaseliasxyz)
+* **Arthur Winck** - *LLFs, PRIORITY INVERSION PROTOCOLS, RISC-V AMO ATOMIC OPERATIONs and MULTICORE SETUP* - [GITHUB](https://github.com/arthurwinck)
 
 See also the list of [contributors](https://epos.lisha.ufsc.br/EPOS+Developers) who participated in this project.
 
